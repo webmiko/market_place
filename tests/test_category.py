@@ -74,9 +74,7 @@ class TestCategoryClassAttributes:
         product2 = Product("Product 2", "Description 2", 200.0, 10)
         product3 = Product("Product 3", "Description 3", 300.0, 15)
 
-        category = Category(
-            "Test Category", "Description", [product1, product2, product3]
-        )
+        category = Category("Test Category", "Description", [product1, product2, product3])
         assert Category.product_count == initial_count + 3
         assert len(category.products) == 3
 
@@ -84,10 +82,7 @@ class TestCategoryClassAttributes:
         """Тест подсчета всех продуктов в категории."""
         initial_count = Category.product_count
 
-        products = [
-            Product(f"Product {i}", f"Description {i}", 100.0 * i, i)
-            for i in range(1, 6)
-        ]
+        products = [Product(f"Product {i}", f"Description {i}", 100.0 * i, i) for i in range(1, 6)]
 
         category = Category("Test Category", "Description", products)
         assert Category.product_count == initial_count + 5
