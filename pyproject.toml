@@ -22,6 +22,7 @@ requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
 
 [tool.black]
+# Длина строки кода: 119 символов
 line-length = 119
 target-version = ['py39', 'py310', 'py311', 'py312']
 include = '\.pyi?$'
@@ -40,6 +41,7 @@ exclude = '''
 
 [tool.isort]
 profile = "black"
+# Длина строки кода: 119 символов (совпадает с black)
 line_length = 119
 multi_line_output = 3
 known_first_party = ["src"]
