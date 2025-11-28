@@ -178,14 +178,20 @@ class TestCategoryEdgeCases:
         assert Category.product_count >= 100
 
     def test_category_products_list_mutation(self) -> None:
-        """Тест, что список продуктов можно изменять после создания."""
+        """Тест, что список продуктов защищен от изменений через property."""
         product1 = Product("Product 1", "Description 1", 100.0, 5)
-        category = Category("Test", "Description", [product1])
+        original_list = [product1]
+        category = Category("Test", "Description", original_list)
         assert len(category.products) == 1
 
+        # Изменение исходного списка не влияет на категорию
         product2 = Product("Product 2", "Description 2", 200.0, 10)
+        original_list.append(product2)
+        assert len(category.products) == 1, "Список продуктов должен быть защищен от изменений исходного списка"
+
+        # Попытка изменить через property не сохраняется (property возвращает копию)
         category.products.append(product2)
-        assert len(category.products) == 2
+        assert len(category.products) == 1, "Property возвращает копию, изменения не сохраняются"
 
     def test_category_with_none_values_in_products(self) -> None:
         """Тест создания категории с None в списке продуктов (если возможно)."""

@@ -22,7 +22,8 @@ class Category:
     Attributes:
         name: Название категории
         description: Описание категории
-        products: Список товаров категории (объекты класса Product)
+        products: Список товаров категории (объекты класса Product).
+                  Property, возвращает копию списка для защиты от изменений.
 
     Class Attributes:
         category_count: Количество созданных категорий
@@ -50,7 +51,7 @@ class Category:
 
     name: str
     description: str
-    products: list["Product"]
+    _products: list["Product"]
 
     def __init__(
         self, name: str, description: str, products: list["Product"]
@@ -75,10 +76,20 @@ class Category:
         """
         self.name = name
         self.description = description
-        self.products = products
+        # Создаем копию списка, чтобы изменения исходного списка не влияли на категорию
+        self._products = products[:] if products else []
 
         # Увеличиваем счетчик категорий
         Category.category_count += 1
 
         # Увеличиваем счетчик продуктов на длину списка продуктов
-        Category.product_count += len(products)
+        Category.product_count += len(self._products)
+
+    @property
+    def products(self) -> list["Product"]:
+        """Возвращает список продуктов категории.
+
+        Returns:
+            Список продуктов категории (копия для защиты от изменений)
+        """
+        return self._products[:]
