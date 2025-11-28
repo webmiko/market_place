@@ -15,6 +15,7 @@ from src.product import Product
 # Константы модуля
 ENCODING = "utf-8"
 FILE_READ_MODE = "r"
+FILE_APPEND_MODE = "a"
 TIMESTAMP_FORMAT = "%Y-%m-%d %H:%M:%S"
 DEFAULT_RETURN_VALUE: List[Category] = []
 
@@ -36,7 +37,7 @@ def _setup_logger() -> logging.Logger:
     logs_dir.mkdir(exist_ok=True)
 
     log_file = logs_dir / "data_loader.log"
-    file_handler = logging.FileHandler(log_file, mode="w", encoding=ENCODING)
+    file_handler = logging.FileHandler(log_file, mode=FILE_APPEND_MODE, encoding=ENCODING)
     file_handler.setLevel(logging.DEBUG)
 
     formatter = logging.Formatter(
