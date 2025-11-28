@@ -44,6 +44,18 @@ htmlcov/
 .dmypy.json
 dmypy.json
 
+# Временные файлы отчетов и проверок
+*ОТЧЕТ*.md
+*отчет*.md
+*REPORT*.md
+*report*.md
+*ПРОВЕРК*.md
+*проверк*.md
+*CHECK*.md
+*check*.md
+*.tmp
+temp_*.md
+
 # Jupyter Notebook
 .ipynb_checkpoints
 
