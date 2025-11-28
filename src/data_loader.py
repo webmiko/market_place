@@ -78,7 +78,7 @@ def load_categories_from_json(file_path: str) -> List[Category]:
     # Проверка существования файла
     if not Path(file_path).exists():
         logger.warning(f"Файл не найден: {file_path}")
-        return DEFAULT_RETURN_VALUE
+        return []
 
     try:
         # Чтение JSON из файла
@@ -88,12 +88,12 @@ def load_categories_from_json(file_path: str) -> List[Category]:
         # Проверка типа данных
         if not isinstance(data, list):
             logger.warning("Файл содержит не список")
-            return DEFAULT_RETURN_VALUE
+            return []
 
         # Обработка пустого файла
         if not data:
             logger.warning("Файл содержит пустой список")
-            return DEFAULT_RETURN_VALUE
+            return []
 
         # Создание объектов Category и Product
         categories: List[Category] = []
@@ -124,10 +124,16 @@ def load_categories_from_json(file_path: str) -> List[Category]:
 
     except json.JSONDecodeError as e:
         logger.error(f"Ошибка парсинга JSON: {type(e).__name__} - {e}")
-        return DEFAULT_RETURN_VALUE
+        return []
     except KeyError as e:
         logger.error(f"Отсутствует обязательное поле в JSON: {type(e).__name__} - {e}")
-        return DEFAULT_RETURN_VALUE
+        return []
+    except (OSError, IOError) as e:
+        logger.error(f"Ошибка ввода-вывода при работе с файлом: {type(e).__name__} - {e}")
+        return []
+    except (ValueError, TypeError) as e:
+        logger.error(f"Ошибка типа данных или значения: {type(e).__name__} - {e}")
+        return []
     except Exception as e:
         logger.error(f"Неожиданная ошибка: {type(e).__name__} - {e}")
-        return DEFAULT_RETURN_VALUE
+        return []

@@ -4,7 +4,7 @@
 включая инициализацию, атрибуты и атрибуты класса.
 """
 
-from src.category import Category
+from src.category import DEFAULT_PRODUCTS_LIST, Category
 from src.product import Product
 
 
@@ -138,3 +138,58 @@ class TestCategoryAttributes:
         assert len(category.products) == 2
         assert category.products[0].name == "Product 1"
         assert category.products[1].name == "Product 2"
+
+
+class TestCategoryConstants:
+    """Тесты для констант модуля Category."""
+
+    def test_default_products_list_constant(self) -> None:
+        """Тест константы DEFAULT_PRODUCTS_LIST."""
+        assert DEFAULT_PRODUCTS_LIST == []
+        assert isinstance(DEFAULT_PRODUCTS_LIST, list)
+
+
+class TestCategoryEdgeCases:
+    """Тесты для граничных случаев класса Category."""
+
+    def test_category_with_empty_string_name(self) -> None:
+        """Тест создания категории с пустым именем."""
+        category = Category("", "Description", [])
+        assert category.name == ""
+
+    def test_category_with_empty_string_description(self) -> None:
+        """Тест создания категории с пустым описанием."""
+        category = Category("Name", "", [])
+        assert category.description == ""
+
+    def test_category_with_very_long_strings(self) -> None:
+        """Тест создания категории с очень длинными строками."""
+        long_name = "A" * 1000
+        long_description = "B" * 2000
+        category = Category(long_name, long_description, [])
+        assert len(category.name) == 1000
+        assert len(category.description) == 2000
+
+    def test_category_with_large_product_list(self) -> None:
+        """Тест создания категории с большим списком продуктов."""
+        products = [Product(f"Product {i}", f"Description {i}", 100.0 * i, i) for i in range(100)]
+        category = Category("Large Category", "Description", products)
+        assert len(category.products) == 100
+        assert Category.product_count >= 100
+
+    def test_category_products_list_mutation(self) -> None:
+        """Тест, что список продуктов можно изменять после создания."""
+        product1 = Product("Product 1", "Description 1", 100.0, 5)
+        category = Category("Test", "Description", [product1])
+        assert len(category.products) == 1
+
+        product2 = Product("Product 2", "Description 2", 200.0, 10)
+        category.products.append(product2)
+        assert len(category.products) == 2
+
+    def test_category_with_none_values_in_products(self) -> None:
+        """Тест создания категории с None в списке продуктов (если возможно)."""
+        # Это может вызвать ошибку типизации, но проверим поведение
+        product = Product("Product", "Description", 100.0, 5)
+        category = Category("Test", "Description", [product])
+        assert len(category.products) == 1

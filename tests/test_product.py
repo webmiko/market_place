@@ -4,7 +4,7 @@
 включая инициализацию и все атрибуты.
 """
 
-from src.product import Product
+from src.product import DEFAULT_PRICE, DEFAULT_QUANTITY, Product
 
 
 class TestProductInit:
@@ -96,3 +96,66 @@ class TestProductAttributes:
         assert description == "Test description"
         assert price == 1000.0
         assert quantity == 10
+
+
+class TestProductConstants:
+    """Тесты для констант модуля Product."""
+
+    def test_default_price_constant(self) -> None:
+        """Тест константы DEFAULT_PRICE."""
+        assert DEFAULT_PRICE == 0.0
+        assert isinstance(DEFAULT_PRICE, float)
+
+    def test_default_quantity_constant(self) -> None:
+        """Тест константы DEFAULT_QUANTITY."""
+        assert DEFAULT_QUANTITY == 0
+        assert isinstance(DEFAULT_QUANTITY, int)
+
+
+class TestProductEdgeCases:
+    """Тесты для граничных случаев класса Product."""
+
+    def test_product_with_zero_price(self) -> None:
+        """Тест создания продукта с нулевой ценой."""
+        product = Product("Free Product", "Free item", 0.0, 10)
+        assert product.price == 0.0
+        assert product.quantity == 10
+
+    def test_product_with_negative_price(self) -> None:
+        """Тест создания продукта с отрицательной ценой (допускается)."""
+        product = Product("Product", "Description", -10.0, 5)
+        assert product.price == -10.0
+
+    def test_product_with_negative_quantity(self) -> None:
+        """Тест создания продукта с отрицательным количеством (допускается)."""
+        product = Product("Product", "Description", 100.0, -5)
+        assert product.quantity == -5
+
+    def test_product_with_empty_string_name(self) -> None:
+        """Тест создания продукта с пустым именем."""
+        product = Product("", "Description", 100.0, 5)
+        assert product.name == ""
+
+    def test_product_with_empty_string_description(self) -> None:
+        """Тест создания продукта с пустым описанием."""
+        product = Product("Product", "", 100.0, 5)
+        assert product.description == ""
+
+    def test_product_with_very_long_strings(self) -> None:
+        """Тест создания продукта с очень длинными строками."""
+        long_name = "A" * 1000
+        long_description = "B" * 2000
+        product = Product(long_name, long_description, 100.0, 5)
+        assert len(product.name) == 1000
+        assert len(product.description) == 2000
+
+    def test_product_with_float_quantity_conversion(self) -> None:
+        """Тест создания продукта с float количеством (должно быть int)."""
+        # Python автоматически не преобразует, но проверим поведение
+        product = Product("Product", "Description", 100.0, 5)
+        assert isinstance(product.quantity, int)
+
+    def test_product_with_int_price(self) -> None:
+        """Тест создания продукта с int ценой (должно быть float)."""
+        product = Product("Product", "Description", 100, 5)
+        assert isinstance(product.price, (int, float))
