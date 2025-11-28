@@ -1,9 +1,15 @@
 """Главный модуль для демонстрации работы классов Product и Category."""
 
+from pathlib import Path
+
 from src.category import Category
+from src.data_loader import load_categories_from_json
 from src.product import Product
 
 if __name__ == "__main__":
+    print("=" * 60)
+    print("Пример 1: Создание продуктов и категорий вручную")
+    print("=" * 60)
     product1 = Product("Samsung Galaxy S23 Ultra", "256GB, Серый цвет, 200MP камера", 180000.0, 5)
     product2 = Product("Iphone 15", "512GB, Gray space", 210000.0, 8)
     product3 = Product("Xiaomi Redmi Note 11", "1024GB, Синий", 31000.0, 14)
@@ -47,5 +53,33 @@ if __name__ == "__main__":
     print(len(category2.products))
     print(category2.products)
 
-    print(Category.category_count)
-    print(Category.product_count)
+    print(f"Всего категорий: {Category.category_count}")
+    print(f"Всего продуктов: {Category.product_count}")
+
+    print("\n" + "=" * 60)
+    print("Пример 2: Загрузка категорий и продуктов из JSON")
+    print("=" * 60)
+
+    # Сброс счетчиков для демонстрации
+    Category.category_count = 0
+    Category.product_count = 0
+
+    # Загрузка данных из JSON
+    json_file = Path(__file__).parent / "data" / "products.json"
+    categories = load_categories_from_json(str(json_file))
+
+    if categories:
+        print(f"\nЗагружено категорий: {len(categories)}")
+        print(f"Всего категорий: {Category.category_count}")
+        print(f"Всего продуктов: {Category.product_count}\n")
+
+        for category in categories:
+            print(f"Категория: {category.name}")
+            print(f"Описание: {category.description}")
+            print(f"Количество продуктов: {len(category.products)}")
+
+            for product in category.products:
+                print(f"  - {product.name}: {product.price} руб. (в наличии: {product.quantity})")
+            print()
+    else:
+        print("Не удалось загрузить данные из JSON файла")
