@@ -182,3 +182,59 @@ class TestLoadCategoriesFromJson:
         assert len(categories) > 0
         assert all(isinstance(cat, Category) for cat in categories)
         assert all(isinstance(prod, Product) for cat in categories for prod in cat.products)
+
+    def test_load_categories_from_json_missing_key(self, tmp_path: Path) -> None:
+        """Тест обработки ошибки KeyError при отсутствии обязательного поля."""
+        # Arrange
+        json_data = [
+            {
+                "name": "Категория без описания",
+                # Отсутствует поле "description"
+                "products": [
+                    {
+                        "name": "Продукт",
+                        "description": "Описание",
+                        "price": 100.0,
+                        "quantity": 1,
+                    },
+                ],
+            },
+        ]
+
+        json_file = tmp_path / "missing_key.json"
+        with open(json_file, "w", encoding="utf-8") as f:
+            json.dump(json_data, f, ensure_ascii=False, indent=2)
+
+        # Act
+        categories = load_categories_from_json(str(json_file))
+
+        # Assert
+        assert categories == []
+
+    def test_load_categories_from_json_missing_product_key(self, tmp_path: Path) -> None:
+        """Тест обработки ошибки KeyError при отсутствии поля в продукте."""
+        # Arrange
+        json_data = [
+            {
+                "name": "Категория",
+                "description": "Описание",
+                "products": [
+                    {
+                        "name": "Продукт",
+                        # Отсутствует поле "price"
+                        "description": "Описание",
+                        "quantity": 1,
+                    },
+                ],
+            },
+        ]
+
+        json_file = tmp_path / "missing_product_key.json"
+        with open(json_file, "w", encoding="utf-8") as f:
+            json.dump(json_data, f, ensure_ascii=False, indent=2)
+
+        # Act
+        categories = load_categories_from_json(str(json_file))
+
+        # Assert
+        assert categories == []
