@@ -38,6 +38,7 @@ reports/
 htmlcov/
 .coverage
 .coverage.*
+coverage.json
 .pytest_cache/
 .tox/
 .mypy_cache/
