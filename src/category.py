@@ -52,7 +52,9 @@ class Category:
     description: str
     products: list["Product"]
 
-    def __init__(self, name: str, description: str, products: list["Product"]) -> None:
+    def __init__(
+        self, name: str, description: str, products: list["Product"]
+    ) -> None:
         """Инициализирует экземпляр класса Category.
 
         При создании категории автоматически увеличиваются счетчики:
