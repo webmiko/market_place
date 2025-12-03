@@ -1,0 +1,18 @@
+[flake8]
+# Длина строки кода: 119 символов
+max-line-length = 119
+exclude =
+    .git,
+    __pycache__,
+    .venv,
+    venv,
+    env,
+    build,
+    dist,
+    *.egg-info,
+    .mypy_cache,
+    .pytest_cache
+ignore = E203,E501,W503
+per-file-ignores =
+    __init__.py:F401
+

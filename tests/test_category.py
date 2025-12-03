@@ -182,16 +182,24 @@ class TestCategoryEdgeCases:
         product1 = Product("Product 1", "Description 1", 100.0, 5)
         original_list = [product1]
         category = Category("Test", "Description", original_list)
+        initial_count = Category.product_count
         assert len(category.products) == 1
 
         # Изменение исходного списка не влияет на категорию
         product2 = Product("Product 2", "Description 2", 200.0, 10)
         original_list.append(product2)
         assert len(category.products) == 1, "Список продуктов должен быть защищен от изменений исходного списка"
+        assert Category.product_count == initial_count, "Счетчик не должен изменяться при изменении исходного списка"
 
         # Попытка изменить через property не сохраняется (property возвращает копию)
-        category.products.append(product2)
-        assert len(category.products) == 1, "Property возвращает копию, изменения не сохраняются"
+        # Важно: property возвращает копию списка, поэтому изменения в возвращенном списке
+        # не влияют на внутренний список категории
+        returned_list = category.products
+        returned_list.append(product2)
+        # Проверяем, что изменения в возвращенном списке не сохранились в категории
+        assert len(returned_list) == 2, "Возвращенный список был изменен"
+        assert len(category.products) == 1, "Property возвращает копию, изменения не сохраняются в категории"
+        assert Category.product_count == initial_count, "Счетчик не должен изменяться при изменении через property"
 
     def test_category_with_none_values_in_products(self) -> None:
         """Тест создания категории с None в списке продуктов (если возможно)."""
