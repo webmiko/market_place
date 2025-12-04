@@ -10,24 +10,24 @@ help:
 	@echo "  make clean       - Очистить кэш и временные файлы"
 
 format:
-	@echo "Форматирование кода..."
-	black .
-	isort .
+	@echo "Форматирование кода (длина строки: 119 символов)..."
+	poetry run black .
+	poetry run isort .
 
 lint:
-	@echo "Проверка стиля кода..."
-	flake8 .
+	@echo "Проверка стиля кода (длина строки: 119 символов)..."
+	poetry run flake8 .
 
 type-check:
 	@echo "Проверка типов..."
-	mypy .
+	poetry run mypy .
 
 check: format lint type-check
 	@echo "✅ Все проверки пройдены!"
 
 test:
 	@echo "Запуск тестов..."
-	pytest -v
+	poetry run pytest -v
 
 clean:
 	@echo "Очистка временных файлов..."
