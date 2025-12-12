@@ -27,9 +27,12 @@ class TestCategoryInit:
 
         assert category.name == "Смартфоны"
         assert category.description == "Смартфоны для коммуникации"
-        assert len(category.products) == 2
-        assert category.products[0] == product1
-        assert category.products[1] == product2
+        assert len(category._products) == 2
+        assert category._products[0] == product1
+        assert category._products[1] == product2
+        # Проверяем строковое представление
+        assert "Product 1" in category.products
+        assert "Product 2" in category.products
 
     def test_category_init_with_empty_products_list(self) -> None:
         """Тест создания категории с пустым списком продуктов."""
@@ -40,15 +43,17 @@ class TestCategoryInit:
         )
 
         assert category.name == "Пустая категория"
-        assert len(category.products) == 0
+        assert len(category._products) == 0
+        assert category.products == ""
 
     def test_category_init_products_are_objects(self) -> None:
         """Тест, что products содержит объекты класса Product."""
         product = Product("Test", "Description", 100.0, 5)
         category = Category("Test Category", "Description", [product])
 
-        assert isinstance(category.products[0], Product)
-        assert category.products[0].name == "Test"
+        assert isinstance(category._products[0], Product)
+        assert category._products[0].name == "Test"
+        assert "Test" in category.products
 
 
 class TestCategoryClassAttributes:
@@ -76,7 +81,10 @@ class TestCategoryClassAttributes:
 
         category = Category("Test Category", "Description", [product1, product2, product3])
         assert Category.product_count == initial_count + 3
-        assert len(category.products) == 3
+        assert len(category._products) == 3
+        assert "Product 1" in category.products
+        assert "Product 2" in category.products
+        assert "Product 3" in category.products
 
     def test_product_count_counts_all_products_in_category(self) -> None:
         """Тест подсчета всех продуктов в категории."""
@@ -86,7 +94,10 @@ class TestCategoryClassAttributes:
 
         category = Category("Test Category", "Description", products)
         assert Category.product_count == initial_count + 5
-        assert len(category.products) == 5
+        assert len(category._products) == 5
+        products_str = category.products
+        for i in range(1, 6):
+            assert f"Product {i}" in products_str
 
     def test_category_count_and_product_count_are_class_attributes(self) -> None:
         """Тест, что category_count и product_count - атрибуты класса."""
@@ -123,8 +134,9 @@ class TestCategoryAttributes:
 
         assert category.name == "Test Category"
         assert category.description == "Test category description"
-        assert len(category.products) == 1
-        assert category.products[0] == product
+        assert len(category._products) == 1
+        assert category._products[0] == product
+        assert "Test Product" in category.products
 
     def test_category_products_list_can_be_accessed(self) -> None:
         """Тест доступа к списку продуктов категории."""
@@ -135,9 +147,12 @@ class TestCategoryAttributes:
 
         category = Category("Test", "Description", products)
 
-        assert len(category.products) == 2
-        assert category.products[0].name == "Product 1"
-        assert category.products[1].name == "Product 2"
+        assert len(category._products) == 2
+        assert category._products[0].name == "Product 1"
+        assert category._products[1].name == "Product 2"
+        products_str = category.products
+        assert "Product 1" in products_str
+        assert "Product 2" in products_str
 
 
 class TestCategoryConstants:
@@ -174,8 +189,11 @@ class TestCategoryEdgeCases:
         """Тест создания категории с большим списком продуктов."""
         products = [Product(f"Product {i}", f"Description {i}", 100.0 * i, i) for i in range(100)]
         category = Category("Large Category", "Description", products)
-        assert len(category.products) == 100
+        assert len(category._products) == 100
         assert Category.product_count >= 100
+        products_str = category.products
+        assert "Product 0" in products_str
+        assert "Product 99" in products_str
 
     def test_category_products_list_mutation(self) -> None:
         """Тест, что список продуктов защищен от изменений через property."""
@@ -183,22 +201,17 @@ class TestCategoryEdgeCases:
         original_list = [product1]
         category = Category("Test", "Description", original_list)
         initial_count = Category.product_count
-        assert len(category.products) == 1
+        assert len(category._products) == 1
 
         # Изменение исходного списка не влияет на категорию
         product2 = Product("Product 2", "Description 2", 200.0, 10)
         original_list.append(product2)
-        assert len(category.products) == 1, "Список продуктов должен быть защищен от изменений исходного списка"
+        assert len(category._products) == 1, "Список продуктов должен быть защищен от изменений исходного списка"
         assert Category.product_count == initial_count, "Счетчик не должен изменяться при изменении исходного списка"
 
-        # Попытка изменить через property не сохраняется (property возвращает копию)
-        # Важно: property возвращает копию списка, поэтому изменения в возвращенном списке
-        # не влияют на внутренний список категории
-        returned_list = category.products
-        returned_list.append(product2)
-        # Проверяем, что изменения в возвращенном списке не сохранились в категории
-        assert len(returned_list) == 2, "Возвращенный список был изменен"
-        assert len(category.products) == 1, "Property возвращает копию, изменения не сохраняются в категории"
+        # Property возвращает строку, поэтому изменения строки не влияют на внутренний список
+        # Проверяем, что изменения строки не влияют на категорию
+        assert len(category._products) == 1, "Property возвращает строку, изменения не влияют на категорию"
         assert Category.product_count == initial_count, "Счетчик не должен изменяться при изменении через property"
 
     def test_category_with_none_values_in_products(self) -> None:
@@ -206,4 +219,53 @@ class TestCategoryEdgeCases:
         # Это может вызвать ошибку типизации, но проверим поведение
         product = Product("Product", "Description", 100.0, 5)
         category = Category("Test", "Description", [product])
-        assert len(category.products) == 1
+        assert len(category._products) == 1
+        assert "Product" in category.products
+
+
+class TestCategoryAddProduct:
+    """Тесты для метода add_product класса Category."""
+
+    def test_add_product_to_empty_category(self) -> None:
+        """Тест добавления продукта в пустую категорию."""
+        category = Category("Test", "Description", [])
+        product = Product("Test Product", "Description", 100.0, 5)
+        initial_count = Category.product_count
+
+        category.add_product(product)
+
+        assert len(category._products) == 1
+        assert category._products[0] == product
+        assert Category.product_count == initial_count + 1
+        assert "Test Product" in category.products
+
+    def test_add_product_to_category_with_products(self) -> None:
+        """Тест добавления продукта в категорию с существующими продуктами."""
+        product1 = Product("Product 1", "Description 1", 100.0, 5)
+        category = Category("Test", "Description", [product1])
+        product2 = Product("Product 2", "Description 2", 200.0, 10)
+        initial_count = Category.product_count
+
+        category.add_product(product2)
+
+        assert len(category._products) == 2
+        assert category._products[0] == product1
+        assert category._products[1] == product2
+        assert Category.product_count == initial_count + 1
+        assert "Product 1" in category.products
+        assert "Product 2" in category.products
+
+    def test_add_multiple_products(self) -> None:
+        """Тест добавления нескольких продуктов."""
+        category = Category("Test", "Description", [])
+        products = [Product(f"Product {i}", f"Description {i}", 100.0 * i, i) for i in range(1, 4)]
+        initial_count = Category.product_count
+
+        for product in products:
+            category.add_product(product)
+
+        assert len(category._products) == 3
+        assert Category.product_count == initial_count + 3
+        products_str = category.products
+        for i in range(1, 4):
+            assert f"Product {i}" in products_str

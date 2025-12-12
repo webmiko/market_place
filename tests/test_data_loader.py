@@ -69,8 +69,8 @@ class TestLoadCategoriesFromJson:
         assert isinstance(categories[1], Category)
         assert categories[0].name == "Смартфоны"
         assert categories[1].name == "Телевизоры"
-        assert len(categories[0].products) == 2
-        assert len(categories[1].products) == 1
+        assert len(categories[0]._products) == 2
+        assert len(categories[1]._products) == 1
 
     def test_load_categories_from_json_products_are_objects(self, tmp_path: Path) -> None:
         """Тест, что продукты создаются как объекты Product."""
@@ -99,11 +99,12 @@ class TestLoadCategoriesFromJson:
 
         # Assert
         assert len(categories) == 1
-        assert len(categories[0].products) == 1
-        assert isinstance(categories[0].products[0], Product)
-        assert categories[0].products[0].name == "Samsung Galaxy C23 Ultra"
-        assert categories[0].products[0].price == 180000.0
-        assert categories[0].products[0].quantity == 5
+        assert len(categories[0]._products) == 1
+        assert isinstance(categories[0]._products[0], Product)
+        assert categories[0]._products[0].name == "Samsung Galaxy C23 Ultra"
+        assert categories[0]._products[0].price == 180000.0
+        assert categories[0]._products[0].quantity == 5
+        assert "Samsung Galaxy C23 Ultra" in categories[0].products
 
     def test_load_categories_from_json_empty_products_list(self, tmp_path: Path) -> None:
         """Тест загрузки категории с пустым списком продуктов."""
@@ -126,7 +127,8 @@ class TestLoadCategoriesFromJson:
         # Assert
         assert len(categories) == 1
         assert categories[0].name == "Пустая категория"
-        assert len(categories[0].products) == 0
+        assert len(categories[0]._products) == 0
+        assert categories[0].products == ""
 
     def test_load_categories_from_json_file_not_found(self) -> None:
         """Тест обработки ошибки FileNotFoundError."""
@@ -190,7 +192,7 @@ class TestLoadCategoriesFromJson:
         # Assert
         assert len(categories) > 0
         assert all(isinstance(cat, Category) for cat in categories)
-        assert all(isinstance(prod, Product) for cat in categories for prod in cat.products)
+        assert all(isinstance(prod, Product) for cat in categories for prod in cat._products)
 
     def test_load_categories_from_json_missing_key(self, tmp_path: Path) -> None:
         """Тест обработки ошибки KeyError при отсутствии обязательного поля."""
@@ -269,7 +271,8 @@ class TestLoadCategoriesFromJson:
         # Assert
         assert len(categories) == 1
         assert categories[0].name == "Категория без продуктов"
-        assert len(categories[0].products) == 0
+        assert len(categories[0]._products) == 0
+        assert categories[0].products == ""
 
     def test_load_categories_from_json_general_exception(self, tmp_path: Path) -> None:
         """Тест обработки общего исключения."""
@@ -325,7 +328,16 @@ class TestLoadCategoriesFromJson:
         # Arrange
         json_file = tmp_path / "test.json"
         with open(json_file, "w", encoding="utf-8") as f:
-            json.dump([{"name": "Test", "description": "Desc", "products": [{"name": "Prod", "description": "Desc", "price": 100.0, "quantity": 1}]}], f)
+            json.dump(
+                [
+                    {
+                        "name": "Test",
+                        "description": "Desc",
+                        "products": [{"name": "Prod", "description": "Desc", "price": 100.0, "quantity": 1}],
+                    }
+                ],
+                f,
+            )
 
         # Мокаем Product.__init__ чтобы вызвать ValueError при создании продукта
         with patch("src.data_loader.Product.__init__", side_effect=ValueError("Invalid value")):
