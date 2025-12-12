@@ -35,7 +35,6 @@ logs/
 
 # Отчеты и тесты
 reports/
-htmlcov/
 .coverage
 .coverage.*
 .pytest_cache/
