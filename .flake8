@@ -1,4 +1,5 @@
 [flake8]
+# Длина строки кода: 119 символов
 max-line-length = 119
 exclude =
     .git,

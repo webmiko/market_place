@@ -35,14 +35,26 @@ logs/
 
 # Отчеты и тесты
 reports/
-htmlcov/
 .coverage
 .coverage.*
 .pytest_cache/
+# coverage.json и COVERAGE.md оставляем для отслеживания покрытия
 .tox/
 .mypy_cache/
 .dmypy.json
 dmypy.json
+
+# Временные файлы отчетов и проверок
+*ОТЧЕТ*.md
+*отчет*.md
+*REPORT*.md
+*report*.md
+*ПРОВЕРК*.md
+*проверк*.md
+*CHECK*.md
+*check*.md
+*.tmp
+temp_*.md
 
 # Jupyter Notebook
 .ipynb_checkpoints
@@ -70,4 +82,10 @@ venv.bak/
 .mypy_cache/
 .dmypy.json
 dmypy.json
+
+# База знаний
+База-знаний/
+Универсальная-база-знаний/
+*база-знаний*/
+*База-знаний*/
 
