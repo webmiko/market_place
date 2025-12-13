@@ -80,7 +80,7 @@ class Product:
 
     name: str
     description: str
-    _price: float
+    __price: float
     quantity: int
 
     def __init__(self, name: str, description: str, price: float, quantity: int) -> None:
@@ -99,7 +99,7 @@ class Product:
         """
         self.name = name
         self.description = description
-        self._price = price
+        self.__price = price
         self.quantity = quantity
 
     @classmethod
@@ -135,7 +135,7 @@ class Product:
                     new_quantity = existing.quantity + product_data["quantity"]
                     new_price = max(existing.price, product_data["price"])
                     existing.quantity = new_quantity
-                    existing._price = new_price
+                    existing.__price = new_price
                     return existing
 
         # Создаем новый продукт
@@ -153,7 +153,7 @@ class Product:
         Returns:
             Цена продукта
         """
-        return self._price
+        return self.__price
 
     @price.setter
     def price(self, value: float) -> None:
@@ -176,10 +176,10 @@ class Product:
             return
 
         # Проверка на понижение цены
-        if hasattr(self, "_price") and value < self._price:
-            logger.info(f"Попытка понизить цену для {self.name}: {self._price} -> {value}")
+        if hasattr(self, "_Product__price") and value < self.__price:
+            logger.info(f"Попытка понизить цену для {self.name}: {self.__price} -> {value}")
             try:
-                response = input(f"Цена понижается с {self._price} до {value}. Подтвердите действие (y/n): ")
+                response = input(f"Цена понижается с {self.__price} до {value}. Подтвердите действие (y/n): ")
                 if response.lower() != "y":
                     logger.info(f"Пользователь отменил понижение цены для {self.name}")
                     return
@@ -188,5 +188,5 @@ class Product:
                 logger.debug(f"EOFError при попытке понизить цену для {self.name} (неинтерактивный режим)")
                 return
 
-        logger.info(f"Установка цены для {self.name}: {self._price} -> {value}")
-        self._price = value
+        logger.info(f"Установка цены для {self.name}: {self.__price} -> {value}")
+        self.__price = value
