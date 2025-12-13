@@ -51,11 +51,9 @@ class Category:
 
     name: str
     description: str
-    _products: list["Product"]
+    __products: list["Product"]
 
-    def __init__(
-        self, name: str, description: str, products: list["Product"]
-    ) -> None:
+    def __init__(self, name: str, description: str, products: list["Product"]) -> None:
         """Инициализирует экземпляр класса Category.
 
         При создании категории автоматически увеличиваются счетчики:
@@ -77,19 +75,46 @@ class Category:
         self.name = name
         self.description = description
         # Создаем копию списка, чтобы изменения исходного списка не влияли на категорию
-        self._products = products[:] if products else []
+        self.__products = products[:] if products else []
 
         # Увеличиваем счетчик категорий
         Category.category_count += 1
 
         # Увеличиваем счетчик продуктов на длину списка продуктов
-        Category.product_count += len(self._products)
+        Category.product_count += len(self.__products)
+
+    def add_product(self, product: "Product") -> None:
+        """Добавляет продукт в категорию.
+
+        Метод добавляет объект класса Product в приватный список товаров категории
+        и увеличивает счетчик общего количества продуктов.
+
+        Args:
+            product: Объект класса Product для добавления в категорию
+
+        Example:
+            >>> product = Product("Test", "Description", 100.0, 5)
+            >>> category = Category("Test Category", "Description", [])
+            >>> initial_count = Category.product_count
+            >>> category.add_product(product)
+            >>> assert len(category._Category__products) == 1
+            >>> assert Category.product_count == initial_count + 1
+            >>> assert "Test" in category.products
+        """
+        self.__products.append(product)
+        Category.product_count += 1
 
     @property
-    def products(self) -> list["Product"]:
-        """Возвращает список продуктов категории.
+    def products(self) -> str:
+        """Возвращает список продуктов категории в виде строки.
 
         Returns:
-            Список продуктов категории (копия для защиты от изменений)
+            Строка с информацией о продуктах в формате:
+            "Название продукта, цена руб. Остаток: количество шт."
+            Каждый продукт на новой строке.
         """
-        return self._products[:]
+        if not self.__products:
+            return ""
+        return "\n".join(
+            f"{product.name}, {int(product.price)} руб. Остаток: {product.quantity} шт." for product in self.__products
+        )

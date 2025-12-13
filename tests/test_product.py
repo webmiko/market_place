@@ -159,3 +159,136 @@ class TestProductEdgeCases:
         """Тест создания продукта с int ценой (должно быть float)."""
         product = Product("Product", "Description", 100, 5)
         assert isinstance(product.price, (int, float))
+
+
+class TestProductNewProduct:
+    """Тесты для класс-метода new_product класса Product."""
+
+    def test_new_product_from_dict(self) -> None:
+        """Тест создания продукта из словаря."""
+        product_data = {
+            "name": "Test Product",
+            "description": "Test Description",
+            "price": 100.0,
+            "quantity": 5,
+        }
+
+        product = Product.new_product(product_data)
+
+        assert isinstance(product, Product)
+        assert product.name == "Test Product"
+        assert product.description == "Test Description"
+        assert product.price == 100.0
+        assert product.quantity == 5
+
+    def test_new_product_without_existing_products(self) -> None:
+        """Тест создания продукта без списка существующих продуктов."""
+        product_data = {
+            "name": "New Product",
+            "description": "Description",
+            "price": 200.0,
+            "quantity": 10,
+        }
+
+        product = Product.new_product(product_data, existing_products=None)
+
+        assert product.name == "New Product"
+        assert product.price == 200.0
+        assert product.quantity == 10
+
+    def test_new_product_with_duplicate_name(self) -> None:
+        """Тест создания продукта с дублирующимся именем."""
+        existing_product = Product("Duplicate", "Description", 100.0, 5)
+        product_data = {
+            "name": "Duplicate",
+            "description": "New Description",
+            "price": 150.0,
+            "quantity": 3,
+        }
+
+        result = Product.new_product(product_data, existing_products=[existing_product])
+
+        # Должен вернуть существующий продукт с обновленными данными
+        assert result is existing_product
+        assert existing_product.quantity == 8  # 5 + 3
+        assert existing_product.price == 150.0  # max(100.0, 150.0)
+
+    def test_new_product_with_duplicate_name_lower_price(self) -> None:
+        """Тест создания продукта с дублирующимся именем и меньшей ценой."""
+        existing_product = Product("Duplicate", "Description", 200.0, 5)
+        product_data = {
+            "name": "Duplicate",
+            "description": "New Description",
+            "price": 150.0,
+            "quantity": 3,
+        }
+
+        result = Product.new_product(product_data, existing_products=[existing_product])
+
+        # Должен вернуть существующий продукт с максимальной ценой
+        assert result is existing_product
+        assert existing_product.quantity == 8  # 5 + 3
+        assert existing_product.price == 200.0  # max(200.0, 150.0)
+
+
+class TestProductPriceProperty:
+    """Тесты для property price класса Product."""
+
+    def test_price_getter(self) -> None:
+        """Тест получения цены через property."""
+        product = Product("Test", "Description", 100.0, 5)
+        assert product.price == 100.0
+
+    def test_price_setter_valid_value(self) -> None:
+        """Тест установки валидной цены через property."""
+        product = Product("Test", "Description", 100.0, 5)
+        product.price = 150.0
+        assert product.price == 150.0
+
+    def test_price_setter_zero_value(self, capsys) -> None:
+        """Тест установки нулевой цены (должна быть отклонена)."""
+        product = Product("Test", "Description", 100.0, 5)
+        initial_price = product.price
+
+        product.price = 0
+
+        assert product.price == initial_price  # Цена не изменилась
+        captured = capsys.readouterr()
+        assert "Цена не должна быть нулевая или отрицательная" in captured.out
+
+    def test_price_setter_negative_value(self, capsys) -> None:
+        """Тест установки отрицательной цены (должна быть отклонена)."""
+        product = Product("Test", "Description", 100.0, 5)
+        initial_price = product.price
+
+        product.price = -10.0
+
+        assert product.price == initial_price  # Цена не изменилась
+        captured = capsys.readouterr()
+        assert "Цена не должна быть нулевая или отрицательная" in captured.out
+
+    def test_price_setter_increase(self) -> None:
+        """Тест увеличения цены (не требует подтверждения)."""
+        product = Product("Test", "Description", 100.0, 5)
+
+        product.price = 150.0
+
+        assert product.price == 150.0
+
+    def test_price_setter_decrease_without_confirmation(self, monkeypatch) -> None:
+        """Тест понижения цены без подтверждения."""
+        product = Product("Test", "Description", 100.0, 5)
+        monkeypatch.setattr("builtins.input", lambda _: "n")
+
+        product.price = 50.0
+
+        assert product.price == 100.0  # Цена не изменилась
+
+    def test_price_setter_decrease_with_confirmation(self, monkeypatch) -> None:
+        """Тест понижения цены с подтверждением."""
+        product = Product("Test", "Description", 100.0, 5)
+        monkeypatch.setattr("builtins.input", lambda _: "y")
+
+        product.price = 50.0
+
+        assert product.price == 50.0  # Цена изменилась
