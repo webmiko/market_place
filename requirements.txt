@@ -1,0 +1,24 @@
+# Основные зависимости проекта market_place
+# Сгенерировано из pyproject.toml
+# Для установки зависимостей используйте: pip install -r requirements.txt
+
+# Python версия: ^3.9
+
+# Основные зависимости (из [tool.poetry.dependencies])
+# В pyproject.toml указан только python = "^3.9", других зависимостей нет
+
+# Зависимости для разработки (из [tool.poetry.group.dev.dependencies])
+pytest>=7.0.0
+black>=23.0.0
+flake8>=6.0.0
+isort>=5.12.0
+mypy>=1.0.0
+pytest-cov>=7.0.0
+
+# Примечание: Этот проект использует Poetry для управления зависимостями.
+# Для установки зависимостей рекомендуется использовать:
+#   poetry install
+# 
+# Или установить зависимости вручную:
+#   pip install -r requirements.txt
+
