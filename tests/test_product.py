@@ -4,7 +4,15 @@
 включая инициализацию и все атрибуты.
 """
 
+from typing import TYPE_CHECKING
+
+import pytest
+
 from src.product import DEFAULT_PRICE, DEFAULT_QUANTITY, Product
+
+if TYPE_CHECKING:
+    from _pytest.capture import CaptureFixture
+    from _pytest.monkeypatch import MonkeyPatch
 
 
 class TestProductInit:
@@ -245,7 +253,7 @@ class TestProductPriceProperty:
         product.price = 150.0
         assert product.price == 150.0
 
-    def test_price_setter_zero_value(self, capsys) -> None:
+    def test_price_setter_zero_value(self, capsys: "CaptureFixture[str]") -> None:
         """Тест установки нулевой цены (должна быть отклонена)."""
         product = Product("Test", "Description", 100.0, 5)
         initial_price = product.price
@@ -256,7 +264,7 @@ class TestProductPriceProperty:
         captured = capsys.readouterr()
         assert "Цена не должна быть нулевая или отрицательная" in captured.out
 
-    def test_price_setter_negative_value(self, capsys) -> None:
+    def test_price_setter_negative_value(self, capsys: "CaptureFixture[str]") -> None:
         """Тест установки отрицательной цены (должна быть отклонена)."""
         product = Product("Test", "Description", 100.0, 5)
         initial_price = product.price
@@ -275,7 +283,7 @@ class TestProductPriceProperty:
 
         assert product.price == 150.0
 
-    def test_price_setter_decrease_without_confirmation(self, monkeypatch) -> None:
+    def test_price_setter_decrease_without_confirmation(self, monkeypatch: "MonkeyPatch") -> None:
         """Тест понижения цены без подтверждения."""
         product = Product("Test", "Description", 100.0, 5)
         monkeypatch.setattr("builtins.input", lambda _: "n")
@@ -284,7 +292,7 @@ class TestProductPriceProperty:
 
         assert product.price == 100.0  # Цена не изменилась
 
-    def test_price_setter_decrease_with_confirmation(self, monkeypatch) -> None:
+    def test_price_setter_decrease_with_confirmation(self, monkeypatch: "MonkeyPatch") -> None:
         """Тест понижения цены с подтверждением."""
         product = Product("Test", "Description", 100.0, 5)
         monkeypatch.setattr("builtins.input", lambda _: "y")
@@ -292,3 +300,73 @@ class TestProductPriceProperty:
         product.price = 50.0
 
         assert product.price == 50.0  # Цена изменилась
+
+
+class TestProductStr:
+    """Тесты для метода __str__ класса Product."""
+
+    def test_str_representation(self) -> None:
+        """Тест строкового представления продукта."""
+        product = Product("Samsung Galaxy S23 Ultra", "Description", 180000.0, 5)
+        result = str(product)
+        assert result == "Samsung Galaxy S23 Ultra, 180000 руб. Остаток: 5 шт."
+
+    def test_str_with_zero_quantity(self) -> None:
+        """Тест строкового представления продукта с нулевым количеством."""
+        product = Product("Test Product", "Description", 100.0, 0)
+        result = str(product)
+        assert result == "Test Product, 100 руб. Остаток: 0 шт."
+
+    def test_str_with_float_price(self) -> None:
+        """Тест строкового представления продукта с ценой с копейками."""
+        product = Product("Test Product", "Description", 99.99, 10)
+        result = str(product)
+        assert result == "Test Product, 99 руб. Остаток: 10 шт."
+
+    def test_str_integration_with_category_products(self) -> None:
+        """Тест использования __str__ в property products категории."""
+        from src.category import Category
+
+        product = Product("Test Product", "Description", 100.0, 5)
+        category = Category("Test Category", "Description", [product])
+        products_str = category.products
+        assert "Test Product, 100 руб. Остаток: 5 шт." in products_str
+
+
+class TestProductAdd:
+    """Тесты для метода __add__ класса Product."""
+
+    def test_add_two_products(self) -> None:
+        """Тест сложения двух продуктов."""
+        product1 = Product("Product 1", "Description 1", 100.0, 10)
+        product2 = Product("Product 2", "Description 2", 200.0, 2)
+        result = product1 + product2
+        assert result == 1400.0  # 100 * 10 + 200 * 2 = 1400
+
+    def test_add_products_with_zero_quantity(self) -> None:
+        """Тест сложения продуктов с нулевым количеством."""
+        product1 = Product("Product 1", "Description 1", 100.0, 0)
+        product2 = Product("Product 2", "Description 2", 200.0, 5)
+        result = product1 + product2
+        assert result == 1000.0  # 100 * 0 + 200 * 5 = 1000
+
+    def test_add_products_commutative(self) -> None:
+        """Тест коммутативности сложения продуктов."""
+        product1 = Product("Product 1", "Description 1", 100.0, 10)
+        product2 = Product("Product 2", "Description 2", 200.0, 2)
+        result1 = product1 + product2
+        result2 = product2 + product1
+        assert result1 == result2 == 1400.0
+
+    def test_add_with_float_price(self) -> None:
+        """Тест сложения продуктов с ценой с копейками."""
+        product1 = Product("Product 1", "Description 1", 99.99, 10)
+        product2 = Product("Product 2", "Description 2", 50.50, 5)
+        result = product1 + product2
+        assert result == 1252.4  # 99.99 * 10 + 50.50 * 5 = 1252.4
+
+    def test_add_with_different_types_raises_error(self) -> None:
+        """Тест, что сложение с не-Product объектом вызывает TypeError."""
+        product = Product("Product 1", "Description 1", 100.0, 10)
+        with pytest.raises(TypeError, match="Можно складывать только объекты класса Product"):
+            _ = product + 100  # type: ignore

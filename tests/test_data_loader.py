@@ -3,9 +3,15 @@
 import json
 import logging
 from pathlib import Path
+from typing import TYPE_CHECKING
 from unittest.mock import patch
 
+import pytest
+
 from src.category import Category
+
+if TYPE_CHECKING:
+    from pytest import LogCaptureFixture
 from src.data_loader import (
     DEFAULT_RETURN_VALUE,
     ENCODING,
@@ -69,8 +75,8 @@ class TestLoadCategoriesFromJson:
         assert isinstance(categories[1], Category)
         assert categories[0].name == "Смартфоны"
         assert categories[1].name == "Телевизоры"
-        assert len(categories[0]._Category__products) == 2
-        assert len(categories[1]._Category__products) == 1
+        assert len(categories[0]._Category__products) == 2  # type: ignore[attr-defined]
+        assert len(categories[1]._Category__products) == 1  # type: ignore[attr-defined]
 
     def test_load_categories_from_json_products_are_objects(self, tmp_path: Path) -> None:
         """Тест, что продукты создаются как объекты Product."""
@@ -99,11 +105,11 @@ class TestLoadCategoriesFromJson:
 
         # Assert
         assert len(categories) == 1
-        assert len(categories[0]._Category__products) == 1
-        assert isinstance(categories[0]._Category__products[0], Product)
-        assert categories[0]._Category__products[0].name == "Samsung Galaxy C23 Ultra"
-        assert categories[0]._Category__products[0].price == 180000.0
-        assert categories[0]._Category__products[0].quantity == 5
+        assert len(categories[0]._Category__products) == 1  # type: ignore[attr-defined]
+        assert isinstance(categories[0]._Category__products[0], Product)  # type: ignore[attr-defined]
+        assert categories[0]._Category__products[0].name == "Samsung Galaxy C23 Ultra"  # type: ignore[attr-defined]
+        assert categories[0]._Category__products[0].price == 180000.0  # type: ignore[attr-defined]
+        assert categories[0]._Category__products[0].quantity == 5  # type: ignore[attr-defined]
         assert "Samsung Galaxy C23 Ultra" in categories[0].products
 
     def test_load_categories_from_json_empty_products_list(self, tmp_path: Path) -> None:
@@ -127,7 +133,7 @@ class TestLoadCategoriesFromJson:
         # Assert
         assert len(categories) == 1
         assert categories[0].name == "Пустая категория"
-        assert len(categories[0]._Category__products) == 0
+        assert len(categories[0]._Category__products) == 0  # type: ignore[attr-defined]
         assert categories[0].products == ""
 
     def test_load_categories_from_json_file_not_found(self) -> None:
@@ -192,7 +198,7 @@ class TestLoadCategoriesFromJson:
         # Assert
         assert len(categories) > 0
         assert all(isinstance(cat, Category) for cat in categories)
-        assert all(isinstance(prod, Product) for cat in categories for prod in cat._Category__products)
+        assert all(isinstance(prod, Product) for cat in categories for prod in cat._Category__products)  # type: ignore[attr-defined]
 
     def test_load_categories_from_json_missing_key(self, tmp_path: Path) -> None:
         """Тест обработки ошибки KeyError при отсутствии обязательного поля."""
@@ -271,7 +277,7 @@ class TestLoadCategoriesFromJson:
         # Assert
         assert len(categories) == 1
         assert categories[0].name == "Категория без продуктов"
-        assert len(categories[0]._Category__products) == 0
+        assert len(categories[0]._Category__products) == 0  # type: ignore[attr-defined]
         assert categories[0].products == ""
 
     def test_load_categories_from_json_general_exception(self, tmp_path: Path) -> None:
@@ -291,7 +297,7 @@ class TestLoadCategoriesFromJson:
             # Assert
             assert categories == []
 
-    def test_load_categories_from_json_os_error(self, tmp_path: Path, caplog) -> None:
+    def test_load_categories_from_json_os_error(self, tmp_path: Path, caplog: "LogCaptureFixture") -> None:
         """Тест обработки OSError."""
         # Arrange
         json_file = tmp_path / "test.json"
@@ -307,7 +313,7 @@ class TestLoadCategoriesFromJson:
             assert categories == []
             assert "Ошибка ввода-вывода при работе с файлом" in caplog.text
 
-    def test_load_categories_from_json_io_error(self, tmp_path: Path, caplog) -> None:
+    def test_load_categories_from_json_io_error(self, tmp_path: Path, caplog: "LogCaptureFixture") -> None:
         """Тест обработки IOError."""
         # Arrange
         json_file = tmp_path / "test.json"
@@ -323,7 +329,7 @@ class TestLoadCategoriesFromJson:
             assert categories == []
             assert "Ошибка ввода-вывода при работе с файлом" in caplog.text
 
-    def test_load_categories_from_json_value_error(self, tmp_path: Path, caplog) -> None:
+    def test_load_categories_from_json_value_error(self, tmp_path: Path, caplog: "LogCaptureFixture") -> None:
         """Тест обработки ValueError."""
         # Arrange
         json_file = tmp_path / "test.json"
@@ -349,7 +355,7 @@ class TestLoadCategoriesFromJson:
             assert categories == []
             assert "Ошибка типа данных или значения" in caplog.text
 
-    def test_load_categories_from_json_type_error(self, tmp_path: Path, caplog) -> None:
+    def test_load_categories_from_json_type_error(self, tmp_path: Path, caplog: "LogCaptureFixture") -> None:
         """Тест обработки TypeError."""
         # Arrange
         json_file = tmp_path / "test.json"
@@ -366,7 +372,7 @@ class TestLoadCategoriesFromJson:
             assert categories == []
             assert "Ошибка типа данных или значения" in caplog.text
 
-    def test_load_categories_from_json_logging_info(self, tmp_path: Path, caplog) -> None:
+    def test_load_categories_from_json_logging_info(self, tmp_path: Path, caplog: "LogCaptureFixture") -> None:
         """Тест логирования при успешной загрузке."""
         # Arrange
         json_data = [
@@ -390,7 +396,7 @@ class TestLoadCategoriesFromJson:
         assert "Загрузка категорий из файла" in caplog.text
         assert "Успешно загружено" in caplog.text
 
-    def test_load_categories_from_json_logging_warning_file_not_found(self, caplog) -> None:
+    def test_load_categories_from_json_logging_warning_file_not_found(self, caplog: "LogCaptureFixture") -> None:
         """Тест логирования при отсутствии файла."""
         # Arrange
         non_existent_file = "non_existent_file.json"
@@ -403,7 +409,9 @@ class TestLoadCategoriesFromJson:
         assert categories == []
         assert "Файл не найден" in caplog.text
 
-    def test_load_categories_from_json_logging_warning_not_list(self, tmp_path: Path, caplog) -> None:
+    def test_load_categories_from_json_logging_warning_not_list(
+        self, tmp_path: Path, caplog: "LogCaptureFixture"
+    ) -> None:
         """Тест логирования при неверном типе данных."""
         # Arrange
         json_data = {"name": "Not a list"}
@@ -420,7 +428,9 @@ class TestLoadCategoriesFromJson:
         assert categories == []
         assert "Файл содержит не список" in caplog.text
 
-    def test_load_categories_from_json_logging_warning_empty_list(self, tmp_path: Path, caplog) -> None:
+    def test_load_categories_from_json_logging_warning_empty_list(
+        self, tmp_path: Path, caplog: "LogCaptureFixture"
+    ) -> None:
         """Тест логирования при пустом списке."""
         # Arrange
         json_data: list = []
@@ -437,7 +447,9 @@ class TestLoadCategoriesFromJson:
         assert categories == []
         assert "Файл содержит пустой список" in caplog.text
 
-    def test_load_categories_from_json_logging_error_json_decode(self, tmp_path: Path, caplog) -> None:
+    def test_load_categories_from_json_logging_error_json_decode(
+        self, tmp_path: Path, caplog: "LogCaptureFixture"
+    ) -> None:
         """Тест логирования при ошибке парсинга JSON."""
         # Arrange
         json_file = tmp_path / "invalid.json"
@@ -452,7 +464,9 @@ class TestLoadCategoriesFromJson:
         assert categories == []
         assert "Ошибка парсинга JSON" in caplog.text
 
-    def test_load_categories_from_json_logging_error_key_error(self, tmp_path: Path, caplog) -> None:
+    def test_load_categories_from_json_logging_error_key_error(
+        self, tmp_path: Path, caplog: "LogCaptureFixture"
+    ) -> None:
         """Тест логирования при отсутствии обязательного поля."""
         # Arrange
         json_data = [
@@ -545,7 +559,9 @@ class TestDataLoaderLogger:
         # Проверяем, что это тот же объект
         assert logger1 is logger2
 
-    def test_load_categories_from_json_general_exception_handler(self, tmp_path: Path, caplog) -> None:
+    def test_load_categories_from_json_general_exception_handler(
+        self, tmp_path: Path, caplog: "LogCaptureFixture"
+    ) -> None:
         """Тест обработки общего Exception (не покрытого другими обработчиками)."""
         # Arrange
         json_file = tmp_path / "test.json"
