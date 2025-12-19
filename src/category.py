@@ -4,7 +4,7 @@
 в интернет-магазине.
 """
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Iterator
 
 if TYPE_CHECKING:
     from src.product import Product
@@ -115,6 +115,41 @@ class Category:
         """
         if not self.__products:
             return ""
-        return "\n".join(
-            f"{product.name}, {int(product.price)} руб. Остаток: {product.quantity} шт." for product in self.__products
-        )
+        return "\n".join(str(product) for product in self.__products)
+
+    def __str__(self) -> str:
+        """Возвращает строковое представление категории.
+
+        Returns:
+            Строка в формате: "Название категории, количество продуктов: X шт."
+            где X - общее количество всех товаров на складе (сумма quantity всех продуктов).
+
+        Example:
+            >>> product1 = Product("Test1", "Desc1", 100.0, 5)
+            >>> product2 = Product("Test2", "Desc2", 200.0, 10)
+            >>> category = Category("Test", "Description", [product1, product2])
+            >>> str(category)
+            'Test, количество продуктов: 15 шт.'
+        """
+        total_quantity = sum(product.quantity for product in self.__products)
+        return f"{self.name}, количество продуктов: {total_quantity} шт."
+
+    def __iter__(self) -> Iterator["Product"]:
+        """Возвращает итератор по продуктам категории.
+
+        Позволяет перебирать товары категории в цикле for.
+
+        Yields:
+            Объекты класса Product из категории
+
+        Example:
+            >>> product1 = Product("Test1", "Desc1", 100.0, 5)
+            >>> product2 = Product("Test2", "Desc2", 200.0, 10)
+            >>> category = Category("Test", "Description", [product1, product2])
+            >>> for product in category:
+            ...     print(product.name)
+            Test1
+            Test2
+        """
+        for product in self.__products:
+            yield product
