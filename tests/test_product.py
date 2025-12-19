@@ -11,8 +11,7 @@ import pytest
 from src.product import DEFAULT_PRICE, DEFAULT_QUANTITY, Product
 
 if TYPE_CHECKING:
-    from _pytest.capture import CaptureFixture
-    from _pytest.monkeypatch import MonkeyPatch
+    from pytest import CaptureFixture, MonkeyPatch
 
 
 class TestProductInit:
