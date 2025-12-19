@@ -238,6 +238,24 @@ class TestProductNewProduct:
         assert existing_product.quantity == 8  # 5 + 3
         assert existing_product.price == 200.0  # max(200.0, 150.0)
 
+    def test_new_product_with_duplicate_name_updates_description(self) -> None:
+        """Тест, что описание обновляется при дубликате продукта."""
+        existing_product = Product("Duplicate", "Old Description", 100.0, 5)
+        product_data = {
+            "name": "Duplicate",
+            "description": "Updated Description",
+            "price": 150.0,
+            "quantity": 3,
+        }
+
+        result = Product.new_product(product_data, existing_products=[existing_product])
+
+        # Должен вернуть существующий продукт с обновленным описанием
+        assert result is existing_product
+        assert existing_product.description == "Updated Description"
+        assert existing_product.quantity == 8  # 5 + 3
+        assert existing_product.price == 150.0  # max(100.0, 150.0)
+
 
 class TestProductPriceProperty:
     """Тесты для property price класса Product."""
@@ -363,7 +381,7 @@ class TestProductAdd:
         product1 = Product("Product 1", "Description 1", 99.99, 10)
         product2 = Product("Product 2", "Description 2", 50.50, 5)
         result = product1 + product2
-        assert result == 1252.4  # 99.99 * 10 + 50.50 * 5 = 1252.4
+        assert result == pytest.approx(1252.4)  # 99.99 * 10 + 50.50 * 5 = 1252.4
 
     def test_add_with_different_types_raises_error(self) -> None:
         """Тест, что сложение с не-Product объектом вызывает TypeError."""

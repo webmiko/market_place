@@ -110,6 +110,7 @@ class Product:
         При обнаружении дубликата:
         - Складывает количества товаров
         - Выбирает максимальную цену
+        - Обновляет описание
 
         Args:
             product_data: Словарь с данными продукта:
@@ -136,6 +137,7 @@ class Product:
                     new_price = max(existing.price, product_data["price"])
                     existing.quantity = new_quantity
                     existing.__price = new_price
+                    existing.description = product_data["description"]
                     return existing
 
         # Создаем новый продукт
