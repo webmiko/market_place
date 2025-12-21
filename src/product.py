@@ -110,6 +110,7 @@ class Product:
         При обнаружении дубликата:
         - Складывает количества товаров
         - Выбирает максимальную цену
+        - Обновляет описание
 
         Args:
             product_data: Словарь с данными продукта:
@@ -136,6 +137,7 @@ class Product:
                     new_price = max(existing.price, product_data["price"])
                     existing.quantity = new_quantity
                     existing.__price = new_price
+                    existing.description = product_data["description"]
                     return existing
 
         # Создаем новый продукт
@@ -190,3 +192,35 @@ class Product:
 
         logger.info(f"Установка цены для {self.name}: {self.__price} -> {value}")
         self.__price = value
+
+    def __str__(self) -> str:
+        """Возвращает строковое представление продукта.
+
+        Returns:
+            Строка в формате: "Название продукта, X руб. Остаток: X шт."
+
+        Example:
+            >>> product = Product("Test", "Description", 100.0, 5)
+            >>> str(product)
+            'Test, 100 руб. Остаток: 5 шт.'
+        """
+        return f"{self.name}, {int(self.price)} руб. Остаток: {self.quantity} шт."
+
+    def __add__(self, other: "Product") -> float:
+        """Возвращает сумму произведений цены на количество для двух продуктов.
+
+        Args:
+            other: Второй объект класса Product
+
+        Returns:
+            Сумма произведений цены на количество: self.price * self.quantity + other.price * other.quantity
+
+        Example:
+            >>> product1 = Product("Test1", "Desc1", 100.0, 10)
+            >>> product2 = Product("Test2", "Desc2", 200.0, 2)
+            >>> product1 + product2
+            1400.0
+        """
+        if not isinstance(other, Product):
+            raise TypeError("Можно складывать только объекты класса Product")
+        return self.price * self.quantity + other.price * other.quantity
