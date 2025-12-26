@@ -4,8 +4,10 @@
 включая инициализацию, атрибуты и атрибуты класса.
 """
 
+import pytest
+
 from src.category import DEFAULT_PRODUCTS_LIST, Category
-from src.product import Product
+from src.product import LawnGrass, Product, Smartphone
 
 
 class TestCategoryInit:
@@ -271,6 +273,86 @@ class TestCategoryAddProduct:
         products_str = category.products
         for i in range(1, 4):
             assert f"Product {i}" in products_str
+
+    # ============================================================================
+    # Начало разработки нового функционала в рамках работы над проектом homework_16_1
+    # ============================================================================
+
+    def test_add_product_accepts_product(self) -> None:
+        """Тест, что можно добавить Product в категорию."""
+        category = Category("Test", "Description", [])
+        product = Product("Test Product", "Description", 100.0, 5)
+        initial_count = Category.product_count
+
+        category.add_product(product)
+
+        assert len(category._Category__products) == 1  # type: ignore[attr-defined]
+        assert Category.product_count == initial_count + 1
+
+    def test_add_product_accepts_smartphone(self) -> None:
+        """Тест, что можно добавить Smartphone в категорию."""
+        category = Category("Test", "Description", [])
+        smartphone = Smartphone(
+            "Samsung Galaxy S23 Ultra",
+            "256GB, Серый цвет, 200MP камера",
+            180000.0,
+            5,
+            95.5,
+            "S23 Ultra",
+            256,
+            "Серый",
+        )
+        initial_count = Category.product_count
+
+        category.add_product(smartphone)
+
+        assert len(category._Category__products) == 1  # type: ignore[attr-defined]
+        assert Category.product_count == initial_count + 1
+        assert isinstance(category._Category__products[0], Smartphone)  # type: ignore[attr-defined]
+
+    def test_add_product_accepts_lawn_grass(self) -> None:
+        """Тест, что можно добавить LawnGrass в категорию."""
+        category = Category("Test", "Description", [])
+        grass = LawnGrass(
+            "Газонная трава", "Элитная трава для газона", 500.0, 20, "Россия", "7 дней", "Зеленый"
+        )
+        initial_count = Category.product_count
+
+        category.add_product(grass)
+
+        assert len(category._Category__products) == 1  # type: ignore[attr-defined]
+        assert Category.product_count == initial_count + 1
+        assert isinstance(category._Category__products[0], LawnGrass)  # type: ignore[attr-defined]
+
+    def test_add_product_rejects_string(self) -> None:
+        """Тест, что нельзя добавить строку в категорию."""
+        category = Category("Test", "Description", [])
+        with pytest.raises(TypeError, match="Можно добавлять только объекты класса Product и его наследников"):
+            category.add_product("Not a product")  # type: ignore
+
+    def test_add_product_rejects_int(self) -> None:
+        """Тест, что нельзя добавить число в категорию."""
+        category = Category("Test", "Description", [])
+        with pytest.raises(TypeError, match="Можно добавлять только объекты класса Product и его наследников"):
+            category.add_product(123)  # type: ignore
+
+    def test_add_product_rejects_list(self) -> None:
+        """Тест, что нельзя добавить список в категорию."""
+        category = Category("Test", "Description", [])
+        with pytest.raises(TypeError, match="Можно добавлять только объекты класса Product и его наследников"):
+            category.add_product([1, 2, 3])  # type: ignore
+
+    def test_add_product_rejects_dict(self) -> None:
+        """Тест, что нельзя добавить словарь в категорию."""
+        category = Category("Test", "Description", [])
+        with pytest.raises(TypeError, match="Можно добавлять только объекты класса Product и его наследников"):
+            category.add_product({"name": "Product"})  # type: ignore
+
+    def test_add_product_rejects_none(self) -> None:
+        """Тест, что нельзя добавить None в категорию."""
+        category = Category("Test", "Description", [])
+        with pytest.raises(TypeError, match="Можно добавлять только объекты класса Product и его наследников"):
+            category.add_product(None)  # type: ignore
 
 
 class TestCategoryStr:
