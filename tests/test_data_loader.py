@@ -6,8 +6,6 @@ from pathlib import Path
 from typing import TYPE_CHECKING
 from unittest.mock import patch
 
-import pytest
-
 from src.category import Category
 
 if TYPE_CHECKING:

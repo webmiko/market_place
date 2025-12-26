@@ -92,14 +92,31 @@ class Product:
         Args:
             name: Название продукта
             description: Описание продукта
-            price: Цена продукта (может быть с копейками)
-            quantity: Количество в наличии (в штуках)
+            price: Цена продукта (может быть с копейками). Должна быть >= 0
+            quantity: Количество в наличии (в штуках). Должно быть >= 0
+
+        Raises:
+            ValueError: Если price < 0 или quantity < 0
 
         Example:
             >>> product = Product("Test", "Description", 100.0, 10)
             >>> assert product.name == "Test"
             >>> assert product.quantity == 10
+
+            >>> Product("Test", "Desc", -100.0, 5)  # doctest: +SKIP
+            Traceback (most recent call last):
+            ...
+            ValueError: Цена не может быть отрицательной
+
+            >>> Product("Test", "Desc", 100.0, -5)  # doctest: +SKIP
+            Traceback (most recent call last):
+            ...
+            ValueError: Количество не может быть отрицательным
         """
+        if price < 0:
+            raise ValueError("Цена не может быть отрицательной")
+        if quantity < 0:
+            raise ValueError("Количество не может быть отрицательным")
         self.name = name
         self.description = description
         self.__price = price
@@ -157,7 +174,14 @@ class Product:
 
         Returns:
             Цена продукта
+
+        Raises:
+            ValueError: Если цена была изменена на отрицательную через прямое обращение к приватному атрибуту
         """
+        # Проверка на случай обхода валидации через прямое обращение к приватному атрибуту
+        if self.__price < 0:
+            logger.warning(f"Обнаружена отрицательная цена для {self.name}: {self.__price}")
+            raise ValueError("Цена не может быть отрицательной")
         return self.__price
 
     @price.setter
@@ -242,9 +266,39 @@ class Product:
             ...
             TypeError: Можно складывать только товары из одинаковых классов продуктов
         """
-        if type(self) != type(other):
+        if type(self) is not type(other):
             raise TypeError("Можно складывать только товары из одинаковых классов продуктов")
         return self.price * self.quantity + other.price * other.quantity
+
+    def __eq__(self, other: object) -> bool:
+        """Проверяет равенство двух продуктов по всем атрибутам.
+
+        Два продукта считаются равными, если все их атрибуты совпадают:
+        name, description, price, quantity.
+
+        Args:
+            other: Объект для сравнения
+
+        Returns:
+            True, если продукты равны по всем атрибутам, False в противном случае
+
+        Example:
+            >>> product1 = Product("Test", "Desc", 100.0, 5)
+            >>> product2 = Product("Test", "Desc", 100.0, 5)
+            >>> product3 = Product("Test", "Desc", 200.0, 5)
+            >>> product1 == product2
+            True
+            >>> product1 == product3
+            False
+        """
+        if not isinstance(other, Product):
+            return False
+        return (
+            self.name == other.name
+            and self.description == other.description
+            and self.price == other.price
+            and self.quantity == other.quantity
+        )
 
 
 # ============================================================================
@@ -330,6 +384,34 @@ class Smartphone(Product):
         self.memory = memory
         self.color = color
 
+    def __eq__(self, other: object) -> bool:
+        """Проверяет равенство двух смартфонов по всем атрибутам.
+
+        Два смартфона считаются равными, если все их атрибуты совпадают:
+        name, description, price, quantity, efficiency, model, memory, color.
+
+        Args:
+            other: Объект для сравнения
+
+        Returns:
+            True, если смартфоны равны по всем атрибутам, False в противном случае
+
+        Example:
+            >>> smartphone1 = Smartphone("Phone", "Desc", 100.0, 5, 95.5, "Model", 256, "Black")
+            >>> smartphone2 = Smartphone("Phone", "Desc", 100.0, 5, 95.5, "Model", 256, "Black")
+            >>> smartphone1 == smartphone2
+            True
+        """
+        if not isinstance(other, Smartphone):
+            return False
+        return (
+            super().__eq__(other)
+            and self.efficiency == other.efficiency
+            and self.model == other.model
+            and self.memory == other.memory
+            and self.color == other.color
+        )
+
 
 class LawnGrass(Product):
     """Класс для представления травы газонной в интернет-магазине.
@@ -402,3 +484,30 @@ class LawnGrass(Product):
         self.country = country
         self.germination_period = germination_period
         self.color = color
+
+    def __eq__(self, other: object) -> bool:
+        """Проверяет равенство двух объектов LawnGrass по всем атрибутам.
+
+        Два объекта считаются равными, если все их атрибуты совпадают:
+        name, description, price, quantity, country, germination_period, color.
+
+        Args:
+            other: Объект для сравнения
+
+        Returns:
+            True, если объекты равны по всем атрибутам, False в противном случае
+
+        Example:
+            >>> grass1 = LawnGrass("Grass", "Desc", 50.0, 10, "Russia", "7 days", "Green")
+            >>> grass2 = LawnGrass("Grass", "Desc", 50.0, 10, "Russia", "7 days", "Green")
+            >>> grass1 == grass2
+            True
+        """
+        if not isinstance(other, LawnGrass):
+            return False
+        return (
+            super().__eq__(other)
+            and self.country == other.country
+            and self.germination_period == other.germination_period
+            and self.color == other.color
+        )

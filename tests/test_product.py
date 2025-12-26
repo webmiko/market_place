@@ -129,14 +129,24 @@ class TestProductEdgeCases:
         assert product.quantity == 10
 
     def test_product_with_negative_price(self) -> None:
-        """Тест создания продукта с отрицательной ценой (допускается)."""
-        product = Product("Product", "Description", -10.0, 5)
-        assert product.price == -10.0
+        """Тест создания продукта с отрицательной ценой (не допускается)."""
+        with pytest.raises(ValueError, match="Цена не может быть отрицательной"):
+            Product("Product", "Description", -10.0, 5)
 
     def test_product_with_negative_quantity(self) -> None:
-        """Тест создания продукта с отрицательным количеством (допускается)."""
-        product = Product("Product", "Description", 100.0, -5)
-        assert product.quantity == -5
+        """Тест создания продукта с отрицательным количеством (не допускается)."""
+        with pytest.raises(ValueError, match="Количество не может быть отрицательным"):
+            Product("Product", "Description", 100.0, -5)
+
+    def test_product_with_zero_price_allowed(self) -> None:
+        """Тест создания продукта с нулевой ценой (допускается)."""
+        product = Product("Product", "Description", 0.0, 5)
+        assert product.price == 0.0
+
+    def test_product_with_zero_quantity_allowed(self) -> None:
+        """Тест создания продукта с нулевым количеством (допускается)."""
+        product = Product("Product", "Description", 100.0, 0)
+        assert product.quantity == 0
 
     def test_product_with_empty_string_name(self) -> None:
         """Тест создания продукта с пустым именем."""
@@ -447,16 +457,12 @@ class TestSmartphoneInheritance:
 
     def test_smartphone_inherits_from_product(self) -> None:
         """Тест, что Smartphone является наследником Product."""
-        smartphone = Smartphone(
-            "Test Phone", "Description", 100.0, 5, 95.5, "Model", 256, "Black"
-        )
+        smartphone = Smartphone("Test Phone", "Description", 100.0, 5, 95.5, "Model", 256, "Black")
         assert isinstance(smartphone, Product)
 
     def test_smartphone_has_parent_attributes(self) -> None:
         """Тест доступа к родительским атрибутам."""
-        smartphone = Smartphone(
-            "Test Phone", "Description", 100.0, 5, 95.5, "Model", 256, "Black"
-        )
+        smartphone = Smartphone("Test Phone", "Description", 100.0, 5, 95.5, "Model", 256, "Black")
         assert smartphone.name == "Test Phone"
         assert smartphone.description == "Description"
         assert smartphone.price == 100.0
@@ -464,9 +470,7 @@ class TestSmartphoneInheritance:
 
     def test_smartphone_has_additional_attributes(self) -> None:
         """Тест дополнительных атрибутов Smartphone."""
-        smartphone = Smartphone(
-            "Test Phone", "Description", 100.0, 5, 95.5, "Model", 256, "Black"
-        )
+        smartphone = Smartphone("Test Phone", "Description", 100.0, 5, 95.5, "Model", 256, "Black")
         assert isinstance(smartphone.efficiency, float)
         assert smartphone.efficiency == 95.5
         assert isinstance(smartphone.model, str)
@@ -490,29 +494,21 @@ class TestSmartphoneMethods:
 
     def test_smartphone_price_property(self) -> None:
         """Тест property price (наследуется от Product)."""
-        smartphone = Smartphone(
-            "Test Phone", "Description", 100.0, 5, 95.5, "Model", 256, "Black"
-        )
+        smartphone = Smartphone("Test Phone", "Description", 100.0, 5, 95.5, "Model", 256, "Black")
         assert smartphone.price == 100.0
         smartphone.price = 150.0
         assert smartphone.price == 150.0
 
     def test_smartphone_add_with_same_type(self) -> None:
         """Тест сложения двух смартфонов."""
-        smartphone1 = Smartphone(
-            "Phone 1", "Description 1", 100.0, 10, 95.5, "Model1", 256, "Black"
-        )
-        smartphone2 = Smartphone(
-            "Phone 2", "Description 2", 200.0, 2, 98.0, "Model2", 512, "White"
-        )
+        smartphone1 = Smartphone("Phone 1", "Description 1", 100.0, 10, 95.5, "Model1", 256, "Black")
+        smartphone2 = Smartphone("Phone 2", "Description 2", 200.0, 2, 98.0, "Model2", 512, "White")
         result = smartphone1 + smartphone2
         assert result == 1400.0  # 100 * 10 + 200 * 2 = 1400
 
     def test_smartphone_add_with_different_type_raises_error(self) -> None:
         """Тест, что сложение смартфона с другим типом вызывает TypeError."""
-        smartphone = Smartphone(
-            "Phone 1", "Description 1", 100.0, 10, 95.5, "Model1", 256, "Black"
-        )
+        smartphone = Smartphone("Phone 1", "Description 1", 100.0, 10, 95.5, "Model1", 256, "Black")
         grass = LawnGrass("Grass", "Description", 50.0, 10, "Russia", "7 days", "Green")
         with pytest.raises(TypeError, match="Можно складывать только товары из одинаковых классов продуктов"):
             _ = smartphone + grass
@@ -642,20 +638,14 @@ class TestProductAddWithTypeChecking:
             256,
             "Серый",
         )
-        smartphone2 = Smartphone(
-            "Iphone 15", "512GB, Gray space", 210000.0, 8, 98.2, "15", 512, "Gray space"
-        )
+        smartphone2 = Smartphone("Iphone 15", "512GB, Gray space", 210000.0, 8, 98.2, "15", 512, "Gray space")
         result = smartphone1 + smartphone2
-        assert result == 2328000.0  # 180000 * 5 + 210000 * 8 = 2328000
+        assert result == 2580000.0  # 180000 * 5 + 210000 * 8 = 900000 + 1680000 = 2580000
 
     def test_add_lawn_grass_with_lawn_grass(self) -> None:
         """Тест сложения LawnGrass + LawnGrass."""
-        grass1 = LawnGrass(
-            "Газонная трава", "Элитная трава для газона", 500.0, 20, "Россия", "7 дней", "Зеленый"
-        )
-        grass2 = LawnGrass(
-            "Газонная трава 2", "Выносливая трава", 450.0, 15, "США", "5 дней", "Темно-зеленый"
-        )
+        grass1 = LawnGrass("Газонная трава", "Элитная трава для газона", 500.0, 20, "Россия", "7 дней", "Зеленый")
+        grass2 = LawnGrass("Газонная трава 2", "Выносливая трава", 450.0, 15, "США", "5 дней", "Темно-зеленый")
         result = grass1 + grass2
         assert result == 16750.0  # 500 * 20 + 450 * 15 = 16750
 
@@ -671,9 +661,7 @@ class TestProductAddWithTypeChecking:
             256,
             "Серый",
         )
-        grass = LawnGrass(
-            "Газонная трава", "Элитная трава для газона", 500.0, 20, "Россия", "7 дней", "Зеленый"
-        )
+        grass = LawnGrass("Газонная трава", "Элитная трава для газона", 500.0, 20, "Россия", "7 дней", "Зеленый")
         with pytest.raises(TypeError, match="Можно складывать только товары из одинаковых классов продуктов"):
             _ = smartphone + grass
 
@@ -723,9 +711,7 @@ class TestIntegration:
             256,
             "Серый",
         )
-        smartphone2 = Smartphone(
-            "Iphone 15", "512GB, Gray space", 210000.0, 8, 98.2, "15", 512, "Gray space"
-        )
+        smartphone2 = Smartphone("Iphone 15", "512GB, Gray space", 210000.0, 8, 98.2, "15", 512, "Gray space")
 
         category = Category("Смартфоны", "Высокотехнологичные смартфоны", [smartphone1, smartphone2])
 
@@ -737,12 +723,8 @@ class TestIntegration:
         """Тест создания категории с травой газонной."""
         from src.category import Category
 
-        grass1 = LawnGrass(
-            "Газонная трава", "Элитная трава для газона", 500.0, 20, "Россия", "7 дней", "Зеленый"
-        )
-        grass2 = LawnGrass(
-            "Газонная трава 2", "Выносливая трава", 450.0, 15, "США", "5 дней", "Темно-зеленый"
-        )
+        grass1 = LawnGrass("Газонная трава", "Элитная трава для газона", 500.0, 20, "Россия", "7 дней", "Зеленый")
+        grass2 = LawnGrass("Газонная трава 2", "Выносливая трава", 450.0, 15, "США", "5 дней", "Темно-зеленый")
 
         category = Category("Газонная трава", "Различные виды газонной травы", [grass1, grass2])
 
@@ -779,3 +761,39 @@ class TestIntegration:
         assert isinstance(products_list[0], Smartphone)
         assert isinstance(products_list[1], LawnGrass)
         assert all(isinstance(p, Product) for p in products_list)
+
+    def test_product_eq_with_different_type(self) -> None:
+        """Тест __eq__ для Product с объектом другого типа."""
+        product = Product("Test", "Desc", 100.0, 5)
+        assert product != "not a product"
+        assert product != 123
+        assert product != None  # noqa: E711
+
+    def test_smartphone_eq_with_different_type(self) -> None:
+        """Тест __eq__ для Smartphone с объектом другого типа."""
+        smartphone = Smartphone("Phone", "Desc", 100.0, 5, 95.5, "Model", 256, "Black")
+        product = Product("Phone", "Desc", 100.0, 5)
+        grass = LawnGrass("Grass", "Desc", 50.0, 10, "Russia", "7 days", "Green")
+        assert smartphone != product
+        assert smartphone != grass
+        assert smartphone != "not a product"
+
+    def test_lawn_grass_eq_with_different_type(self) -> None:
+        """Тест __eq__ для LawnGrass с объектом другого типа."""
+        grass = LawnGrass("Grass", "Desc", 50.0, 10, "Russia", "7 days", "Green")
+        product = Product("Grass", "Desc", 50.0, 10)
+        smartphone = Smartphone("Phone", "Desc", 100.0, 5, 95.5, "Model", 256, "Black")
+        assert grass != product
+        assert grass != smartphone
+        assert grass != "not a product"
+
+    def test_price_setter_eoferror(self) -> None:
+        """Тест price setter с EOFError (неинтерактивный режим)."""
+        from unittest.mock import patch
+
+        product = Product("Test", "Desc", 100.0, 5)
+        with patch("builtins.input", side_effect=EOFError()):
+            # Попытка понизить цену должна вызвать EOFError, который обрабатывается
+            product.price = 50.0
+            # Цена не должна измениться из-за EOFError
+            assert product.price == 100.0

@@ -77,6 +77,11 @@ class Category:
         self.name = name
         self.description = description
         # Создаем копию списка, чтобы изменения исходного списка не влияли на категорию
+        # Проверяем, что все элементы списка являются продуктами
+        if products:
+            for product in products:
+                if not isinstance(product, Product):
+                    raise TypeError("Можно добавлять только объекты класса Product и его наследников")
         self.__products = products[:] if products else []
 
         # Увеличиваем счетчик категорий
@@ -98,12 +103,16 @@ class Category:
         Метод защищен от добавления объектов, не являющихся продуктами. При попытке
         добавить не-продукт выбрасывается TypeError.
 
+        Метод также предотвращает добавление дубликатов - продуктов с такими же
+        атрибутами. При попытке добавить дубликат выбрасывается ValueError.
+
         Args:
             product: Объект класса Product или его наследников (Smartphone, LawnGrass и т.д.)
                 для добавления в категорию
 
         Raises:
             TypeError: Если product не является экземпляром класса Product или его наследников
+            ValueError: Если продукт с такими же атрибутами уже существует в категории
 
         Example:
             >>> product = Product("Test", "Description", 100.0, 5)
@@ -122,9 +131,17 @@ class Category:
             Traceback (most recent call last):
             ...
             TypeError: Можно добавлять только объекты класса Product и его наследников
+
+            >>> category.add_product(product)  # doctest: +SKIP
+            Traceback (most recent call last):
+            ...
+            ValueError: Продукт с такими же атрибутами уже существует в категории
         """
         if not isinstance(product, Product):
             raise TypeError("Можно добавлять только объекты класса Product и его наследников")
+        # Проверка на дубликаты: продукт с такими же атрибутами уже существует
+        if product in self.__products:
+            raise ValueError("Продукт с такими же атрибутами уже существует в категории")
         self.__products.append(product)
         Category.product_count += 1
 
