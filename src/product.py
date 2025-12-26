@@ -252,12 +252,14 @@ class Product:
         """
         if value <= 0:
             error_msg = f"Цена не должна быть нулевая или отрицательная (получено: {value})"
-            logger.warning(f"Попытка установить невалидную цену для {self.name}: {value}")
+            # Логируем только факт попытки без конкретного значения
+            logger.warning(f"Попытка установить невалидную цену для продукта: {self.name}")
             raise ValueError(error_msg)
 
         # Проверка на понижение цены
         if value < self.__price:
-            logger.info(f"Попытка понизить цену для {self.name}: {self.__price} -> {value}")
+            # Логируем только факт попытки понижения без конкретных значений
+            logger.info(f"Попытка понизить цену для продукта: {self.name}")
             try:
                 response = input(f"Цена понижается с {self.__price} до {value}. Подтвердите действие (y/n): ")
                 if response.lower() != "y":
@@ -268,7 +270,8 @@ class Product:
                 logger.debug(f"EOFError при попытке понизить цену для {self.name} (неинтерактивный режим)")
                 return
 
-        logger.info(f"Установка цены для {self.name}: {self.__price} -> {value}")
+        # Логируем только факт изменения цены без конкретных значений
+        logger.info(f"Изменение цены для продукта: {self.name}")
         self.__price = value
 
     def __str__(self) -> str:
