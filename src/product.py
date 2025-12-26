@@ -1,6 +1,9 @@
 """Модуль для работы с продуктами.
 
-Этот модуль содержит класс Product для представления товара в интернет-магазине.
+Этот модуль содержит классы для представления товаров в интернет-магазине:
+- Product - базовый класс для представления товара
+- Smartphone - класс для представления смартфона (наследник Product)
+- LawnGrass - класс для представления травы газонной (наследник Product)
 """
 
 import logging
@@ -224,3 +227,155 @@ class Product:
         if not isinstance(other, Product):
             raise TypeError("Можно складывать только объекты класса Product")
         return self.price * self.quantity + other.price * other.quantity
+
+
+class Smartphone(Product):
+    """Класс для представления смартфона в интернет-магазине.
+
+    Класс Smartphone наследуется от Product и расширяет его дополнительными
+    атрибутами, специфичными для смартфонов.
+
+    Attributes:
+        name: Название продукта (наследуется от Product)
+        description: Описание продукта (наследуется от Product)
+        price: Цена продукта (наследуется от Product)
+        quantity: Количество в наличии (наследуется от Product)
+        efficiency: Производительность смартфона (float)
+        model: Модель смартфона (str)
+        memory: Объем встроенной памяти в ГБ (int)
+        color: Цвет смартфона (str)
+
+    Example:
+        >>> smartphone = Smartphone(
+        ...     name="Samsung Galaxy S23 Ultra",
+        ...     description="256GB, Серый цвет, 200MP камера",
+        ...     price=180000.0,
+        ...     quantity=5,
+        ...     efficiency=95.5,
+        ...     model="S23 Ultra",
+        ...     memory=256,
+        ...     color="Серый"
+        ... )
+        >>> print(smartphone.name)
+        Samsung Galaxy S23 Ultra
+        >>> print(smartphone.efficiency)
+        95.5
+        >>> print(smartphone.memory)
+        256
+    """
+
+    efficiency: float
+    model: str
+    memory: int
+    color: str
+
+    def __init__(
+        self,
+        name: str,
+        description: str,
+        price: float,
+        quantity: int,
+        efficiency: float,
+        model: str,
+        memory: int,
+        color: str,
+    ) -> None:
+        """Инициализирует экземпляр класса Smartphone.
+
+        Args:
+            name: Название продукта
+            description: Описание продукта
+            price: Цена продукта (может быть с копейками)
+            quantity: Количество в наличии (в штуках)
+            efficiency: Производительность смартфона
+            model: Модель смартфона
+            memory: Объем встроенной памяти в ГБ
+            color: Цвет смартфона
+
+        Example:
+            >>> smartphone = Smartphone(
+            ...     "Iphone 15", "512GB, Gray space", 210000.0, 8,
+            ...     98.2, "15", 512, "Gray space"
+            ... )
+            >>> assert smartphone.name == "Iphone 15"
+            >>> assert smartphone.efficiency == 98.2
+            >>> assert smartphone.memory == 512
+        """
+        super().__init__(name, description, price, quantity)
+        self.efficiency = efficiency
+        self.model = model
+        self.memory = memory
+        self.color = color
+
+
+class LawnGrass(Product):
+    """Класс для представления травы газонной в интернет-магазине.
+
+    Класс LawnGrass наследуется от Product и расширяет его дополнительными
+    атрибутами, специфичными для газонной травы.
+
+    Attributes:
+        name: Название продукта (наследуется от Product)
+        description: Описание продукта (наследуется от Product)
+        price: Цена продукта (наследуется от Product)
+        quantity: Количество в наличии (наследуется от Product)
+        country: Страна-производитель (str)
+        germination_period: Срок прорастания (str)
+        color: Цвет травы (str)
+
+    Example:
+        >>> grass = LawnGrass(
+        ...     name="Газонная трава",
+        ...     description="Элитная трава для газона",
+        ...     price=500.0,
+        ...     quantity=20,
+        ...     country="Россия",
+        ...     germination_period="7 дней",
+        ...     color="Зеленый"
+        ... )
+        >>> print(grass.name)
+        Газонная трава
+        >>> print(grass.country)
+        Россия
+        >>> print(grass.germination_period)
+        7 дней
+    """
+
+    country: str
+    germination_period: str
+    color: str
+
+    def __init__(
+        self,
+        name: str,
+        description: str,
+        price: float,
+        quantity: int,
+        country: str,
+        germination_period: str,
+        color: str,
+    ) -> None:
+        """Инициализирует экземпляр класса LawnGrass.
+
+        Args:
+            name: Название продукта
+            description: Описание продукта
+            price: Цена продукта (может быть с копейками)
+            quantity: Количество в наличии (в штуках)
+            country: Страна-производитель
+            germination_period: Срок прорастания
+            color: Цвет травы
+
+        Example:
+            >>> grass = LawnGrass(
+            ...     "Газонная трава 2", "Выносливая трава", 450.0, 15,
+            ...     "США", "5 дней", "Темно-зеленый"
+            ... )
+            >>> assert grass.name == "Газонная трава 2"
+            >>> assert grass.country == "США"
+            >>> assert grass.germination_period == "5 дней"
+        """
+        super().__init__(name, description, price, quantity)
+        self.country = country
+        self.germination_period = germination_period
+        self.color = color
