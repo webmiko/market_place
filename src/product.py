@@ -212,20 +212,38 @@ class Product:
     def __add__(self, other: "Product") -> float:
         """Возвращает сумму произведений цены на количество для двух продуктов.
 
+        Метод позволяет складывать только товары из одинаковых классов продуктов.
+        Например, можно сложить Product + Product, Smartphone + Smartphone,
+        LawnGrass + LawnGrass, но нельзя сложить Smartphone + LawnGrass.
+
         Args:
-            other: Второй объект класса Product
+            other: Второй объект того же класса, что и self
 
         Returns:
             Сумма произведений цены на количество: self.price * self.quantity + other.price * other.quantity
+
+        Raises:
+            TypeError: Если other не является объектом того же класса, что и self
 
         Example:
             >>> product1 = Product("Test1", "Desc1", 100.0, 10)
             >>> product2 = Product("Test2", "Desc2", 200.0, 2)
             >>> product1 + product2
             1400.0
+
+            >>> smartphone1 = Smartphone("Phone1", "Desc", 100.0, 5, 95.5, "Model", 256, "Black")
+            >>> smartphone2 = Smartphone("Phone2", "Desc", 200.0, 2, 98.0, "Model2", 512, "White")
+            >>> smartphone1 + smartphone2
+            900.0
+
+            >>> grass = LawnGrass("Grass", "Desc", 50.0, 10, "Russia", "7 days", "Green")
+            >>> smartphone1 + grass  # doctest: +SKIP
+            Traceback (most recent call last):
+            ...
+            TypeError: Можно складывать только товары из одинаковых классов продуктов
         """
-        if not isinstance(other, Product):
-            raise TypeError("Можно складывать только объекты класса Product")
+        if type(self) != type(other):
+            raise TypeError("Можно складывать только товары из одинаковых классов продуктов")
         return self.price * self.quantity + other.price * other.quantity
 
 
