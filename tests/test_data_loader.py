@@ -6,6 +6,8 @@ from pathlib import Path
 from typing import TYPE_CHECKING
 from unittest.mock import patch
 
+import pytest
+
 from src.category import Category
 
 if TYPE_CHECKING:
@@ -252,7 +254,9 @@ class TestLoadCategoriesFromJson:
         categories = load_categories_from_json(str(json_file))
 
         # Assert
-        assert categories == []
+        # Категория создается, но без продуктов (продукт с ошибкой пропускается)
+        assert len(categories) == 1
+        assert len(categories[0].get_products()) == 0
 
     def test_load_categories_from_json_missing_products_key(self, tmp_path: Path) -> None:
         """Тест загрузки категории без ключа products (используется .get())."""
@@ -343,15 +347,17 @@ class TestLoadCategoriesFromJson:
                 f,
             )
 
-        # Мокаем Product.__init__ чтобы вызвать ValueError при создании продукта
-        with patch("src.data_loader.Product.__init__", side_effect=ValueError("Invalid value")):
+        # Мокаем Product.new_product чтобы вызвать ValueError при создании продукта
+        with patch("src.data_loader.Product.new_product", side_effect=ValueError("Invalid value")):
             # Act
-            with caplog.at_level(logging.ERROR):
+            with caplog.at_level(logging.WARNING):
                 categories = load_categories_from_json(str(json_file))
 
             # Assert
-            assert categories == []
-            assert "Ошибка типа данных или значения" in caplog.text
+            # Категория создается, но без продуктов (продукт с ошибкой пропускается)
+            assert len(categories) == 1
+            assert len(categories[0].get_products()) == 0
+            assert "Ошибка при создании продукта" in caplog.text
 
     def test_load_categories_from_json_type_error(self, tmp_path: Path, caplog: "LogCaptureFixture") -> None:
         """Тест обработки TypeError."""
@@ -363,12 +369,12 @@ class TestLoadCategoriesFromJson:
         # Мокаем Category.__init__ чтобы вызвать TypeError
         with patch("src.data_loader.Category", side_effect=TypeError("Invalid type")):
             # Act
-            with caplog.at_level(logging.ERROR):
-                categories = load_categories_from_json(str(json_file))
+            with caplog.at_level(logging.WARNING):
+                load_categories_from_json(str(json_file))
 
             # Assert
-            assert categories == []
-            assert "Ошибка типа данных или значения" in caplog.text
+            # Категория с ошибкой пропускается, но другие категории могут быть созданы
+            assert "Ошибка при создании категории" in caplog.text
 
     def test_load_categories_from_json_logging_info(self, tmp_path: Path, caplog: "LogCaptureFixture") -> None:
         """Тест логирования при успешной загрузке."""
@@ -431,7 +437,7 @@ class TestLoadCategoriesFromJson:
     ) -> None:
         """Тест логирования при пустом списке."""
         # Arrange
-        json_data: list = []
+        json_data: list[dict[str, object]] = []
 
         json_file = tmp_path / "empty_list.json"
         with open(json_file, "w", encoding="utf-8") as f:
@@ -480,12 +486,13 @@ class TestLoadCategoriesFromJson:
             json.dump(json_data, f, ensure_ascii=False, indent=2)
 
         # Act
-        with caplog.at_level(logging.ERROR):
+        with caplog.at_level(logging.WARNING):
             categories = load_categories_from_json(str(json_file))
 
         # Assert
+        # Категория без обязательных ключей пропускается
         assert categories == []
-        assert "Отсутствует обязательное поле в JSON" in caplog.text
+        assert "Отсутствуют обязательные ключи в категории" in caplog.text or "name категории" in caplog.text
 
 
 class TestDataLoaderConstants:
@@ -557,10 +564,8 @@ class TestDataLoaderLogger:
         # Проверяем, что это тот же объект
         assert logger1 is logger2
 
-    def test_load_categories_from_json_general_exception_handler(
-        self, tmp_path: Path, caplog: "LogCaptureFixture"
-    ) -> None:
-        """Тест обработки общего Exception (не покрытого другими обработчиками)."""
+    def test_load_categories_from_json_unexpected_exception_propagates(self, tmp_path: Path) -> None:
+        """Тест, что неожиданные исключения пробрасываются дальше (Errors should never pass silently)."""
         # Arrange
         json_file = tmp_path / "test.json"
         with open(json_file, "w", encoding="utf-8") as f:
@@ -568,11 +573,8 @@ class TestDataLoaderLogger:
 
         # Мокаем Category.__init__ чтобы вызвать неожиданное исключение
         with patch("src.data_loader.Category.__init__", side_effect=RuntimeError("Unexpected error")):
-            # Act
-            with caplog.at_level(logging.ERROR):
-                categories = load_categories_from_json(str(json_file))
-
-            # Assert
-            assert categories == []
-            assert "Неожиданная ошибка" in caplog.text
-            assert "RuntimeError" in caplog.text
+            # Act & Assert
+            # Неожиданные исключения должны пробрасываться дальше
+            # согласно принципу "Errors should never pass silently"
+            with pytest.raises(RuntimeError, match="Unexpected error"):
+                load_categories_from_json(str(json_file))

@@ -220,7 +220,7 @@ class TestCategoryEdgeCases:
 
     def test_category_with_none_values_in_products(self) -> None:
         """Тест создания категории с None в списке продуктов (не допускается)."""
-        with pytest.raises(TypeError, match="Можно добавлять только объекты класса Product и его наследников"):
+        with pytest.raises(TypeError, match="Нельзя добавлять None в список продуктов"):
             Category("Test", "Description", [None])  # type: ignore
 
     def test_category_with_invalid_products_in_init(self) -> None:

@@ -80,6 +80,8 @@ class Category:
         # Проверяем, что все элементы списка являются продуктами
         if products:
             for product in products:
+                if product is None:
+                    raise TypeError("Нельзя добавлять None в список продуктов")
                 if not isinstance(product, Product):
                     raise TypeError("Можно добавлять только объекты класса Product и его наследников")
         self.__products = products[:] if products else []
@@ -144,6 +146,20 @@ class Category:
             raise ValueError("Продукт с такими же атрибутами уже существует в категории")
         self.__products.append(product)
         Category.product_count += 1
+
+    def get_products(self) -> list["Product"]:
+        """Возвращает копию списка продуктов категории.
+
+        Returns:
+            Копия списка продуктов категории для защиты от изменений
+
+        Example:
+            >>> product = Product("Test", "Description", 100.0, 5)
+            >>> category = Category("Test", "Description", [product])
+            >>> products = category.get_products()
+            >>> assert len(products) == 1
+        """
+        return self.__products[:]
 
     @property
     def products(self) -> str:

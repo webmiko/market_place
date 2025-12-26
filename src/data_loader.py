@@ -99,25 +99,53 @@ def load_categories_from_json(file_path: str) -> List[Category]:
         categories: List[Category] = []
 
         for category_data in data:
+            # Проверка структуры данных категории
+            if not isinstance(category_data, dict):
+                logger.warning(f"Элемент категории должен быть словарем, получен {type(category_data).__name__}")
+                continue
+
+            # Проверка обязательных ключей категории
+            if "name" not in category_data or "description" not in category_data:
+                logger.warning(f"Отсутствуют обязательные ключи в категории: {category_data}")
+                continue
+
+            # Валидация типов данных категории
+            if not isinstance(category_data["name"], str):
+                logger.warning(f"name категории должен быть строкой, получен {type(category_data['name']).__name__}")
+                continue
+            if not isinstance(category_data["description"], str):
+                logger.warning(
+                    f"description категории должен быть строкой, получен {type(category_data['description']).__name__}"
+                )
+                continue
+
             # Создание продуктов для категории
             products: List[Product] = []
 
             for product_data in category_data.get("products", []):
-                product = Product(
-                    name=product_data["name"],
-                    description=product_data["description"],
-                    price=product_data["price"],
-                    quantity=product_data["quantity"],
-                )
-                products.append(product)
+                if not isinstance(product_data, dict):
+                    logger.warning(f"Элемент продукта должен быть словарем, получен {type(product_data).__name__}")
+                    continue
+
+                try:
+                    # Используем new_product для валидации и создания продукта
+                    product = Product.new_product(product_data)
+                    products.append(product)
+                except (KeyError, TypeError, ValueError) as e:
+                    logger.warning(f"Ошибка при создании продукта: {type(e).__name__} - {e}, данные: {product_data}")
+                    continue
 
             # Создание категории
-            category = Category(
-                name=category_data["name"],
-                description=category_data["description"],
-                products=products,
-            )
-            categories.append(category)
+            try:
+                category = Category(
+                    name=category_data["name"],
+                    description=category_data["description"],
+                    products=products,
+                )
+                categories.append(category)
+            except (TypeError, ValueError) as e:
+                logger.warning(f"Ошибка при создании категории: {type(e).__name__} - {e}")
+                continue
 
         logger.info(f"Успешно загружено {len(categories)} категорий")
         return categories
@@ -134,6 +162,5 @@ def load_categories_from_json(file_path: str) -> List[Category]:
     except (ValueError, TypeError) as e:
         logger.error(f"Ошибка типа данных или значения: {type(e).__name__} - {e}")
         return DEFAULT_RETURN_VALUE[:]
-    except Exception as e:
-        logger.error(f"Неожиданная ошибка: {type(e).__name__} - {e}")
-        return DEFAULT_RETURN_VALUE[:]
+    # Не перехватываем все остальные исключения - они должны быть видны
+    # согласно принципу "Errors should never pass silently"

@@ -123,7 +123,9 @@ class Product:
         self.quantity = quantity
 
     @classmethod
-    def new_product(cls, product_data: dict, existing_products: Optional[List["Product"]] = None) -> "Product":
+    def new_product(
+        cls, product_data: dict[str, object], existing_products: Optional[List["Product"]] = None
+    ) -> "Product":
         """Создает новый продукт из словаря с данными.
 
         Если передан список существующих продуктов, проверяет наличие дубликатов по имени.
@@ -143,29 +145,72 @@ class Product:
         Returns:
             Созданный объект класса Product
 
+        Raises:
+            KeyError: Если отсутствуют обязательные ключи в product_data
+            TypeError: Если типы данных не соответствуют ожидаемым
+            ValueError: Если значения невалидны (отрицательные числа)
+
         Example:
             >>> data = {"name": "Test", "description": "Desc", "price": 100.0, "quantity": 5}
             >>> product = Product.new_product(data)
             >>> assert product.name == "Test"
             >>> assert product.price == 100.0
         """
+        # Проверка наличия обязательных ключей
+        required_keys = ["name", "description", "price", "quantity"]
+        missing_keys = [key for key in required_keys if key not in product_data]
+        if missing_keys:
+            raise KeyError(f"Отсутствуют обязательные ключи в product_data: {missing_keys}")
+
+        # Валидация и преобразование типов
+        name = product_data["name"]
+        description = product_data["description"]
+        price = product_data["price"]
+        quantity = product_data["quantity"]
+
+        # Проверка типов
+        if not isinstance(name, str):
+            raise TypeError(f"name должен быть строкой, получен {type(name).__name__}")
+        if not isinstance(description, str):
+            raise TypeError(f"description должен быть строкой, получен {type(description).__name__}")
+
+        # Преобразование и проверка price
+        try:
+            price = float(price)  # type: ignore[arg-type]
+        except (ValueError, TypeError) as e:
+            raise TypeError(f"price должен быть числом, получен {type(product_data['price']).__name__}") from e
+
+        # Преобразование и проверка quantity
+        try:
+            quantity = int(quantity)  # type: ignore[call-overload]
+        except (ValueError, TypeError) as e:
+            raise TypeError(
+                f"quantity должен быть целым числом, получен {type(product_data['quantity']).__name__}"
+            ) from e
+
+        # Валидация значений
+        if price < 0:
+            raise ValueError(f"price не может быть отрицательным, получено: {price}")
+        if quantity < 0:
+            raise ValueError(f"quantity не может быть отрицательным, получено: {quantity}")
+
         if existing_products:
             for existing in existing_products:
-                if existing.name == product_data["name"]:
+                if existing.name == name:
                     # Найден дубликат - складываем количества и выбираем максимальную цену
-                    new_quantity = existing.quantity + product_data["quantity"]
-                    new_price = max(existing.price, product_data["price"])
+                    new_quantity = existing.quantity + quantity
+                    new_price = max(existing.price, price)
                     existing.quantity = new_quantity
-                    existing.__price = new_price
-                    existing.description = product_data["description"]
+                    existing.price = new_price  # Используем property setter для валидации
+                    existing.description = description
                     return existing
 
         # Создаем новый продукт
         return cls(
-            name=product_data["name"],
-            description=product_data["description"],
-            price=product_data["price"],
-            quantity=product_data["quantity"],
+            name=name,
+            description=description,
+            price=price,
+            quantity=quantity,
         )
 
     @property
@@ -188,24 +233,30 @@ class Product:
     def price(self, value: float) -> None:
         """Устанавливает цену продукта с валидацией.
 
-        Если цена <= 0, выводит сообщение об ошибке и не устанавливает цену.
+        Если цена <= 0, выбрасывает ValueError.
         Если цена понижается, запрашивает подтверждение у пользователя.
 
         Args:
             value: Новая цена продукта
 
+        Raises:
+            ValueError: Если цена <= 0
+
         Example:
             >>> product = Product("Test", "Desc", 100.0, 5)
             >>> product.price = 50.0  # Понижение цены - запросит подтверждение
-            >>> product.price = -10.0  # Отрицательная цена - выведет ошибку
+            >>> product.price = -10.0  # Отрицательная цена - выбросит ValueError
+            Traceback (most recent call last):
+            ...
+            ValueError: Цена не должна быть нулевая или отрицательная
         """
         if value <= 0:
+            error_msg = f"Цена не должна быть нулевая или отрицательная (получено: {value})"
             logger.warning(f"Попытка установить невалидную цену для {self.name}: {value}")
-            print("Цена не должна быть нулевая или отрицательная")
-            return
+            raise ValueError(error_msg)
 
         # Проверка на понижение цены
-        if hasattr(self, "_Product__price") and value < self.__price:
+        if value < self.__price:
             logger.info(f"Попытка понизить цену для {self.name}: {self.__price} -> {value}")
             try:
                 response = input(f"Цена понижается с {self.__price} до {value}. Подтвердите действие (y/n): ")

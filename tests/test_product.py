@@ -11,7 +11,7 @@ import pytest
 from src.product import DEFAULT_PRICE, DEFAULT_QUANTITY, LawnGrass, Product, Smartphone
 
 if TYPE_CHECKING:
-    from pytest import CaptureFixture, MonkeyPatch
+    from pytest import MonkeyPatch
 
 
 class TestProductInit:
@@ -280,27 +280,25 @@ class TestProductPriceProperty:
         product.price = 150.0
         assert product.price == 150.0
 
-    def test_price_setter_zero_value(self, capsys: "CaptureFixture[str]") -> None:
+    def test_price_setter_zero_value(self) -> None:
         """Тест установки нулевой цены (должна быть отклонена)."""
         product = Product("Test", "Description", 100.0, 5)
         initial_price = product.price
 
-        product.price = 0
+        with pytest.raises(ValueError, match="Цена не должна быть нулевая или отрицательная"):
+            product.price = 0
 
         assert product.price == initial_price  # Цена не изменилась
-        captured = capsys.readouterr()
-        assert "Цена не должна быть нулевая или отрицательная" in captured.out
 
-    def test_price_setter_negative_value(self, capsys: "CaptureFixture[str]") -> None:
+    def test_price_setter_negative_value(self) -> None:
         """Тест установки отрицательной цены (должна быть отклонена)."""
         product = Product("Test", "Description", 100.0, 5)
         initial_price = product.price
 
-        product.price = -10.0
+        with pytest.raises(ValueError, match="Цена не должна быть нулевая или отрицательная"):
+            product.price = -10.0
 
         assert product.price == initial_price  # Цена не изменилась
-        captured = capsys.readouterr()
-        assert "Цена не должна быть нулевая или отрицательная" in captured.out
 
     def test_price_setter_increase(self) -> None:
         """Тест увеличения цены (не требует подтверждения)."""
