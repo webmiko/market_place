@@ -7,6 +7,7 @@
 """
 
 import logging
+from abc import ABC, abstractmethod
 from pathlib import Path
 from typing import TYPE_CHECKING, List, Optional
 
@@ -56,17 +57,193 @@ def _setup_logger() -> logging.Logger:
 logger = _setup_logger()
 
 
-class Product:
-    """Класс для представления продукта в интернет-магазине.
+class LogCreationMixin:
+    """Миксин для логирования создания объектов.
 
-    Класс Product содержит информацию о товаре: название, описание, цену
-    и количество в наличии.
+    При создании объекта выводит в консоль информацию о классе
+    и параметрах, с которыми был создан объект.
+
+    Примечание: Использует print() согласно требованию задания.
+    """
+
+    def __init__(self, *args: object, **kwargs: object) -> None:
+        """Инициализирует объект и логирует его создание.
+
+        Args:
+            *args: Позиционные аргументы конструктора
+            **kwargs: Именованные аргументы конструктора
+        """
+        super().__init__(*args, **kwargs)  # type: ignore[call-arg]
+        # Логирование будет вызвано в конце __init__ каждого класса
+        # после установки всех атрибутов
+
+    def __repr__(self) -> str:
+        """Возвращает строковое представление объекта для логирования.
+
+        Returns:
+            Строка с параметрами объекта для логирования
+        """
+        # Базовое представление
+        attrs: list[str] = []
+        if hasattr(self, "name"):
+            attrs.append(f"name='{getattr(self, 'name')}'")
+        if hasattr(self, "description"):
+            attrs.append(f"description='{getattr(self, 'description')}'")
+        if hasattr(self, "price"):
+            attrs.append(f"price={getattr(self, 'price')}")
+        if hasattr(self, "quantity"):
+            attrs.append(f"quantity={getattr(self, 'quantity')}")
+
+        # Дополнительные атрибуты для Smartphone
+        if hasattr(self, "efficiency"):
+            attrs.append(f"efficiency={getattr(self, 'efficiency')}")
+            attrs.append(f"model='{getattr(self, 'model')}'")
+            attrs.append(f"memory={getattr(self, 'memory')}")
+            attrs.append(f"color='{getattr(self, 'color')}'")
+
+        # Дополнительные атрибуты для LawnGrass
+        if hasattr(self, "country"):
+            attrs.append(f"country='{getattr(self, 'country')}'")
+            attrs.append(f"germination_period='{getattr(self, 'germination_period')}'")
+            attrs.append(f"color='{getattr(self, 'color')}'")
+
+        return f"{self.__class__.__name__}({', '.join(attrs)})"
+
+
+class BaseProduct(ABC):
+    """Абстрактный базовый класс для всех продуктов.
+
+    Определяет общий интерфейс и функциональность для всех продуктов
+    в интернет-магазине. Не может быть создан напрямую.
 
     Attributes:
         name: Название продукта
         description: Описание продукта
         price: Цена продукта (может быть с копейками). Property с геттером и сеттером.
         quantity: Количество в наличии (в штуках)
+    """
+
+    name: str
+    description: str
+    __price: float
+    quantity: int
+
+    def __init__(self, name: str, description: str, price: float, quantity: int) -> None:
+        """Инициализирует экземпляр продукта.
+
+        Args:
+            name: Название продукта
+            description: Описание продукта
+            price: Цена продукта (может быть с копейками). Должна быть >= 0
+            quantity: Количество в наличии (в штуках). Должно быть >= 0
+
+        Raises:
+            ValueError: Если price < 0 или quantity < 0
+        """
+        if price < 0:
+            raise ValueError("Цена не может быть отрицательной")
+        if quantity < 0:
+            raise ValueError("Количество не может быть отрицательным")
+        self.name = name
+        self.description = description
+        self.__price = price
+        self.quantity = quantity
+
+    @property
+    def price(self) -> float:
+        """Возвращает цену продукта.
+
+        Returns:
+            Цена продукта
+
+        Raises:
+            ValueError: Если цена была изменена на отрицательную через прямое обращение к приватному атрибуту
+        """
+        # Проверка на случай обхода валидации через прямое обращение к приватному атрибуту
+        if self.__price < 0:
+            logger.warning(f"Обнаружена отрицательная цена для {self.name}: {self.__price}")
+            raise ValueError("Цена не может быть отрицательной")
+        return self.__price
+
+    @price.setter
+    def price(self, value: float) -> None:
+        """Устанавливает цену продукта с валидацией.
+
+        Если цена <= 0, выбрасывает ValueError.
+        Если цена понижается, запрашивает подтверждение у пользователя.
+
+        Args:
+            value: Новая цена продукта
+
+        Raises:
+            ValueError: Если цена <= 0
+        """
+        if value <= 0:
+            error_msg = f"Цена не должна быть нулевая или отрицательная (получено: {value})"
+            logger.warning(f"Попытка установить невалидную цену для продукта: {self.name}")
+            raise ValueError(error_msg)
+
+        # Проверка на понижение цены
+        if value < self.__price:
+            logger.info(f"Попытка понизить цену для продукта: {self.name}")
+            try:
+                response = input(f"Цена понижается с {self.__price} до {value}. Подтвердите действие (y/n): ")
+                if response.lower() != "y":
+                    logger.info(f"Пользователь отменил понижение цены для {self.name}")
+                    return
+            except EOFError:
+                # В неинтерактивном режиме (например, при тестировании) не подтверждаем понижение
+                logger.debug(f"EOFError при попытке понизить цену для {self.name} (неинтерактивный режим)")
+                return
+
+        logger.info(f"Изменение цены для продукта: {self.name}")
+        self.__price = value
+
+    @abstractmethod
+    def __str__(self) -> str:
+        """Возвращает строковое представление продукта.
+
+        Returns:
+            Строка с представлением продукта
+        """
+        pass
+
+    @abstractmethod
+    def __add__(self, other: "BaseProduct") -> float:
+        """Возвращает сумму произведений цены на количество для двух продуктов.
+
+        Args:
+            other: Второй объект продукта
+
+        Returns:
+            Сумма произведений цены на количество
+        """
+        pass
+
+    @abstractmethod
+    def __eq__(self, other: object) -> bool:
+        """Проверяет равенство двух продуктов по всем атрибутам.
+
+        Args:
+            other: Объект для сравнения
+
+        Returns:
+            True, если продукты равны по всем атрибутам, False в противном случае
+        """
+        pass
+
+
+class Product(LogCreationMixin, BaseProduct):
+    """Класс для представления продукта в интернет-магазине.
+
+    Класс Product наследуется от BaseProduct и реализует все абстрактные методы.
+    Содержит информацию о товаре: название, описание, цену и количество в наличии.
+
+    Attributes:
+        name: Название продукта (наследуется от BaseProduct)
+        description: Описание продукта (наследуется от BaseProduct)
+        price: Цена продукта (может быть с копейками). Property с геттером и сеттером (наследуется от BaseProduct)
+        quantity: Количество в наличии (в штуках) (наследуется от BaseProduct)
 
     Example:
         >>> product = Product(
@@ -80,11 +257,6 @@ class Product:
         >>> print(product.price)
         180000.0
     """
-
-    name: str
-    description: str
-    __price: float
-    quantity: int
 
     def __init__(self, name: str, description: str, price: float, quantity: int) -> None:
         """Инициализирует экземпляр класса Product.
@@ -113,14 +285,9 @@ class Product:
             ...
             ValueError: Количество не может быть отрицательным
         """
-        if price < 0:
-            raise ValueError("Цена не может быть отрицательной")
-        if quantity < 0:
-            raise ValueError("Количество не может быть отрицательным")
-        self.name = name
-        self.description = description
-        self.__price = price
-        self.quantity = quantity
+        super().__init__(name, description, price, quantity)
+        # Логируем создание объекта после установки всех атрибутов
+        print(f"Создан объект {self.__class__.__name__}: {self!r}")
 
     @classmethod
     def new_product(
@@ -213,67 +380,6 @@ class Product:
             quantity=quantity,
         )
 
-    @property
-    def price(self) -> float:
-        """Возвращает цену продукта.
-
-        Returns:
-            Цена продукта
-
-        Raises:
-            ValueError: Если цена была изменена на отрицательную через прямое обращение к приватному атрибуту
-        """
-        # Проверка на случай обхода валидации через прямое обращение к приватному атрибуту
-        if self.__price < 0:
-            logger.warning(f"Обнаружена отрицательная цена для {self.name}: {self.__price}")
-            raise ValueError("Цена не может быть отрицательной")
-        return self.__price
-
-    @price.setter
-    def price(self, value: float) -> None:
-        """Устанавливает цену продукта с валидацией.
-
-        Если цена <= 0, выбрасывает ValueError.
-        Если цена понижается, запрашивает подтверждение у пользователя.
-
-        Args:
-            value: Новая цена продукта
-
-        Raises:
-            ValueError: Если цена <= 0
-
-        Example:
-            >>> product = Product("Test", "Desc", 100.0, 5)
-            >>> product.price = 50.0  # Понижение цены - запросит подтверждение
-            >>> product.price = -10.0  # Отрицательная цена - выбросит ValueError
-            Traceback (most recent call last):
-            ...
-            ValueError: Цена не должна быть нулевая или отрицательная
-        """
-        if value <= 0:
-            error_msg = f"Цена не должна быть нулевая или отрицательная (получено: {value})"
-            # Логируем только факт попытки без конкретного значения
-            logger.warning(f"Попытка установить невалидную цену для продукта: {self.name}")
-            raise ValueError(error_msg)
-
-        # Проверка на понижение цены
-        if value < self.__price:
-            # Логируем только факт попытки понижения без конкретных значений
-            logger.info(f"Попытка понизить цену для продукта: {self.name}")
-            try:
-                response = input(f"Цена понижается с {self.__price} до {value}. Подтвердите действие (y/n): ")
-                if response.lower() != "y":
-                    logger.info(f"Пользователь отменил понижение цены для {self.name}")
-                    return
-            except EOFError:
-                # В неинтерактивном режиме (например, при тестировании) не подтверждаем понижение
-                logger.debug(f"EOFError при попытке понизить цену для {self.name} (неинтерактивный режим)")
-                return
-
-        # Логируем только факт изменения цены без конкретных значений
-        logger.info(f"Изменение цены для продукта: {self.name}")
-        self.__price = value
-
     def __str__(self) -> str:
         """Возвращает строковое представление продукта.
 
@@ -287,7 +393,7 @@ class Product:
         """
         return f"{self.name}, {int(self.price)} руб. Остаток: {self.quantity} шт."
 
-    def __add__(self, other: "Product") -> float:
+    def __add__(self, other: "BaseProduct") -> float:
         """Возвращает сумму произведений цены на количество для двух продуктов.
 
         Метод позволяет складывать только товары из одинаковых классов продуктов.
@@ -437,6 +543,8 @@ class Smartphone(Product):
         self.model = model
         self.memory = memory
         self.color = color
+        # Вызываем print после установки всех атрибутов
+        print(f"Создан объект {self.__class__.__name__}: {self!r}")
 
     def __eq__(self, other: object) -> bool:
         """Проверяет равенство двух смартфонов по всем атрибутам.
@@ -538,6 +646,8 @@ class LawnGrass(Product):
         self.country = country
         self.germination_period = germination_period
         self.color = color
+        # Вызываем print после установки всех атрибутов
+        print(f"Создан объект {self.__class__.__name__}: {self!r}")
 
     def __eq__(self, other: object) -> bool:
         """Проверяет равенство двух объектов LawnGrass по всем атрибутам.
