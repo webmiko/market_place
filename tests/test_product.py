@@ -8,7 +8,7 @@ from typing import TYPE_CHECKING
 
 import pytest
 
-from src.product import DEFAULT_PRICE, DEFAULT_QUANTITY, LawnGrass, Product, Smartphone
+from src.product import DEFAULT_PRICE, DEFAULT_QUANTITY, BaseProduct, LawnGrass, LogCreationMixin, Product, Smartphone
 
 if TYPE_CHECKING:
     from pytest import MonkeyPatch
@@ -265,6 +265,101 @@ class TestProductNewProduct:
         assert existing_product.quantity == 8  # 5 + 3
         assert existing_product.price == 150.0  # max(100.0, 150.0)
 
+    def test_new_product_with_invalid_name_type(self) -> None:
+        """Тест создания продукта с неправильным типом name."""
+        product_data = {
+            "name": 123,  # Должно быть str
+            "description": "Description",
+            "price": 100.0,
+            "quantity": 5,
+        }
+
+        with pytest.raises(TypeError, match="name должен быть строкой"):
+            Product.new_product(product_data)
+
+    def test_new_product_with_invalid_description_type(self) -> None:
+        """Тест создания продукта с неправильным типом description."""
+        product_data = {
+            "name": "Test",
+            "description": 123,  # Должно быть str
+            "price": 100.0,
+            "quantity": 5,
+        }
+
+        with pytest.raises(TypeError, match="description должен быть строкой"):
+            Product.new_product(product_data)
+
+    def test_new_product_with_invalid_price_type(self) -> None:
+        """Тест создания продукта с неправильным типом price."""
+        product_data = {
+            "name": "Test",
+            "description": "Description",
+            "price": "not a number",  # Должно быть число
+            "quantity": 5,
+        }
+
+        with pytest.raises(TypeError, match="price должен быть числом"):
+            Product.new_product(product_data)
+
+    def test_new_product_with_invalid_quantity_type(self) -> None:
+        """Тест создания продукта с неправильным типом quantity."""
+        product_data = {
+            "name": "Test",
+            "description": "Description",
+            "price": 100.0,
+            "quantity": "not a number",  # Должно быть int
+        }
+
+        with pytest.raises(TypeError, match="quantity должен быть целым числом"):
+            Product.new_product(product_data)
+
+    def test_new_product_with_negative_price_in_dict(self) -> None:
+        """Тест создания продукта с отрицательной ценой в словаре."""
+        product_data = {
+            "name": "Test",
+            "description": "Description",
+            "price": -100.0,
+            "quantity": 5,
+        }
+
+        with pytest.raises(ValueError, match="price не может быть отрицательным"):
+            Product.new_product(product_data)
+
+    def test_new_product_with_negative_quantity_in_dict(self) -> None:
+        """Тест создания продукта с отрицательным количеством в словаре."""
+        product_data = {
+            "name": "Test",
+            "description": "Description",
+            "price": 100.0,
+            "quantity": -5,
+        }
+
+        with pytest.raises(ValueError, match="quantity не может быть отрицательным"):
+            Product.new_product(product_data)
+
+    def test_new_product_with_missing_keys(self) -> None:
+        """Тест создания продукта с отсутствующими обязательными ключами."""
+        # Отсутствует ключ "name"
+        product_data = {
+            "description": "Description",
+            "price": 100.0,
+            "quantity": 5,
+        }
+
+        with pytest.raises(KeyError, match="Отсутствуют обязательные ключи"):
+            Product.new_product(product_data)
+
+    def test_new_product_with_multiple_missing_keys(self) -> None:
+        """Тест создания продукта с несколькими отсутствующими ключами."""
+        # Отсутствуют ключи "name" и "description"
+        product_data = {
+            "price": 100.0,
+            "quantity": 5,
+        }
+
+        with pytest.raises(KeyError, match="Отсутствуют обязательные ключи"):
+            Product.new_product(product_data)
+
 
 class TestProductPriceProperty:
     """Тесты для property price класса Product."""
@@ -273,6 +368,15 @@ class TestProductPriceProperty:
         """Тест получения цены через property."""
         product = Product("Test", "Description", 100.0, 5)
         assert product.price == 100.0
+
+    def test_price_getter_with_negative_price_bypass(self) -> None:
+        """Тест получения цены при обходе валидации через прямое обращение к __price."""
+        product = Product("Test", "Description", 100.0, 5)
+        # Прямое изменение приватного атрибута для проверки валидации в getter
+        product._BaseProduct__price = -50.0  # type: ignore[attr-defined]
+
+        with pytest.raises(ValueError, match="Цена не может быть отрицательной"):
+            _ = product.price
 
     def test_price_setter_valid_value(self) -> None:
         """Тест установки валидной цены через property."""
@@ -767,6 +871,21 @@ class TestIntegration:
         assert product != 123
         assert product != None  # noqa: E711
 
+    def test_product_eq_with_product_different_attributes(self) -> None:
+        """Тест __eq__ для Product с другим Product, но разными атрибутами."""
+        product1 = Product("Test", "Desc", 100.0, 5)
+        product2 = Product("Test", "Desc", 100.0, 5)
+        product3 = Product("Test", "Desc", 200.0, 5)  # Разная цена
+        product4 = Product("Test", "Desc", 100.0, 10)  # Разное количество
+        product5 = Product("Test2", "Desc", 100.0, 5)  # Разное имя
+        product6 = Product("Test", "Desc2", 100.0, 5)  # Разное описание
+
+        assert product1 == product2
+        assert product1 != product3
+        assert product1 != product4
+        assert product1 != product5
+        assert product1 != product6
+
     def test_smartphone_eq_with_different_type(self) -> None:
         """Тест __eq__ для Smartphone с объектом другого типа."""
         smartphone = Smartphone("Phone", "Desc", 100.0, 5, 95.5, "Model", 256, "Black")
@@ -776,6 +895,21 @@ class TestIntegration:
         assert smartphone != grass
         assert smartphone != "not a product"
 
+    def test_smartphone_eq_with_different_attributes(self) -> None:
+        """Тест __eq__ для Smartphone с другим Smartphone, но разными атрибутами."""
+        smartphone1 = Smartphone("Phone", "Desc", 100.0, 5, 95.5, "Model", 256, "Black")
+        smartphone2 = Smartphone("Phone", "Desc", 100.0, 5, 95.5, "Model", 256, "Black")
+        smartphone3 = Smartphone("Phone", "Desc", 100.0, 5, 98.0, "Model", 256, "Black")  # Разная efficiency
+        smartphone4 = Smartphone("Phone", "Desc", 100.0, 5, 95.5, "Model2", 256, "Black")  # Разная model
+        smartphone5 = Smartphone("Phone", "Desc", 100.0, 5, 95.5, "Model", 512, "Black")  # Разная memory
+        smartphone6 = Smartphone("Phone", "Desc", 100.0, 5, 95.5, "Model", 256, "White")  # Разный color
+
+        assert smartphone1 == smartphone2
+        assert smartphone1 != smartphone3
+        assert smartphone1 != smartphone4
+        assert smartphone1 != smartphone5
+        assert smartphone1 != smartphone6
+
     def test_lawn_grass_eq_with_different_type(self) -> None:
         """Тест __eq__ для LawnGrass с объектом другого типа."""
         grass = LawnGrass("Grass", "Desc", 50.0, 10, "Russia", "7 days", "Green")
@@ -784,6 +918,19 @@ class TestIntegration:
         assert grass != product
         assert grass != smartphone
         assert grass != "not a product"
+
+    def test_lawn_grass_eq_with_different_attributes(self) -> None:
+        """Тест __eq__ для LawnGrass с другим LawnGrass, но разными атрибутами."""
+        grass1 = LawnGrass("Grass", "Desc", 50.0, 10, "Russia", "7 days", "Green")
+        grass2 = LawnGrass("Grass", "Desc", 50.0, 10, "Russia", "7 days", "Green")
+        grass3 = LawnGrass("Grass", "Desc", 50.0, 10, "USA", "7 days", "Green")  # Разная country
+        grass4 = LawnGrass("Grass", "Desc", 50.0, 10, "Russia", "5 days", "Green")  # Разный germination_period
+        grass5 = LawnGrass("Grass", "Desc", 50.0, 10, "Russia", "7 days", "Dark Green")  # Разный color
+
+        assert grass1 == grass2
+        assert grass1 != grass3
+        assert grass1 != grass4
+        assert grass1 != grass5
 
     def test_price_setter_eoferror(self) -> None:
         """Тест price setter с EOFError (неинтерактивный режим)."""
@@ -795,3 +942,118 @@ class TestIntegration:
             product.price = 50.0
             # Цена не должна измениться из-за EOFError
             assert product.price == 100.0
+
+
+class TestSetupLogger:
+    """Тесты для функции _setup_logger."""
+
+    def test_setup_logger_returns_existing_logger(self) -> None:
+        """Тест, что _setup_logger возвращает существующий logger, если handlers уже есть."""
+        from src.product import _setup_logger
+
+        # Первый вызов создает logger
+        logger1 = _setup_logger()
+        assert logger1 is not None
+
+        # Второй вызов должен вернуть тот же logger (если handlers уже есть)
+        logger2 = _setup_logger()
+        assert logger2 is not None
+        # Проверяем, что это тот же logger (по имени)
+        assert logger1.name == logger2.name
+
+
+class TestBaseProduct:
+    """Тесты для абстрактного класса BaseProduct."""
+
+    def test_base_product_is_abstract(self) -> None:
+        """Тест, что BaseProduct нельзя создать напрямую."""
+        from abc import ABC
+
+        assert issubclass(BaseProduct, ABC)
+
+        # Попытка создать экземпляр должна вызвать TypeError
+        with pytest.raises(TypeError, match="Can't instantiate abstract class"):
+            BaseProduct("Test", "Desc", 100.0, 5)  # type: ignore[abstract]
+
+    def test_base_product_has_abstract_methods(self) -> None:
+        """Тест, что BaseProduct имеет абстрактные методы."""
+        from abc import ABC
+
+        # Проверяем, что BaseProduct является абстрактным классом
+        assert issubclass(BaseProduct, ABC)
+
+        # Проверяем наличие абстрактных методов
+        assert hasattr(BaseProduct, "__init__")
+        assert hasattr(BaseProduct, "__str__")
+        assert hasattr(BaseProduct, "__add__")
+        assert hasattr(BaseProduct, "__eq__")
+
+    def test_product_inherits_from_base_product(self) -> None:
+        """Тест, что Product наследуется от BaseProduct."""
+        assert issubclass(Product, BaseProduct)
+
+    def test_smartphone_inherits_from_base_product_indirectly(self) -> None:
+        """Тест, что Smartphone наследуется от BaseProduct через Product."""
+        assert issubclass(Smartphone, BaseProduct)
+        assert issubclass(Smartphone, Product)
+
+    def test_lawn_grass_inherits_from_base_product_indirectly(self) -> None:
+        """Тест, что LawnGrass наследуется от BaseProduct через Product."""
+        assert issubclass(LawnGrass, BaseProduct)
+        assert issubclass(LawnGrass, Product)
+
+
+class TestLogCreationMixin:
+    """Тесты для миксина LogCreationMixin."""
+
+    def test_product_logs_creation(self, capsys) -> None:
+        """Тест, что Product логирует создание объекта."""
+        # Создаем объект - print должен быть вызван в __init__
+        product = Product("Продукт1", "Описание продукта", 1200, 10)
+
+        # Читаем вывод после создания объекта
+        captured = capsys.readouterr()
+        assert "Создан объект Product" in captured.out
+        assert "name='Продукт1'" in captured.out
+        assert "price=1200" in captured.out
+        assert "quantity=10" in captured.out
+        assert product.name == "Продукт1"
+
+    def test_smartphone_logs_creation(self, capsys) -> None:
+        """Тест, что Smartphone логирует создание объекта."""
+        # Создаем объект - print должен быть вызван в __init__
+        smartphone = Smartphone("Phone", "Desc", 100.0, 5, 95.5, "Model", 256, "Black")
+
+        # Читаем вывод после создания объекта
+        captured = capsys.readouterr()
+        assert "Создан объект Smartphone" in captured.out
+        assert "name='Phone'" in captured.out
+        assert "efficiency=95.5" in captured.out
+        assert "model='Model'" in captured.out
+        assert smartphone.name == "Phone"
+
+    def test_lawn_grass_logs_creation(self, capsys) -> None:
+        """Тест, что LawnGrass логирует создание объекта."""
+        # Создаем объект - print должен быть вызван в __init__
+        grass = LawnGrass("Grass", "Desc", 50.0, 10, "Russia", "7 days", "Green")
+
+        # Читаем вывод после создания объекта
+        captured = capsys.readouterr()
+        assert "Создан объект LawnGrass" in captured.out
+        assert "name='Grass'" in captured.out
+        assert "country='Russia'" in captured.out
+        assert "germination_period='7 days'" in captured.out
+        assert grass.name == "Grass"
+
+    def test_log_creation_mixin_in_mro(self) -> None:
+        """Тест, что LogCreationMixin присутствует в MRO класса Product."""
+        assert LogCreationMixin in Product.__mro__
+
+    def test_product_repr_works(self) -> None:
+        """Тест, что __repr__ работает корректно для Product."""
+        product = Product("Test", "Desc", 100.0, 5)
+        repr_str = repr(product)
+
+        assert "Product" in repr_str
+        assert "name='Test'" in repr_str
+        assert "price=100.0" in repr_str
