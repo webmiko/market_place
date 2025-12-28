@@ -6,8 +6,10 @@
 
 from typing import TYPE_CHECKING, Iterator
 
+from src.product import Product
+
 if TYPE_CHECKING:
-    from src.product import Product
+    pass
 
 # Константы модуля
 DEFAULT_PRODUCTS_LIST: list["Product"] = []
@@ -75,6 +77,13 @@ class Category:
         self.name = name
         self.description = description
         # Создаем копию списка, чтобы изменения исходного списка не влияли на категорию
+        # Проверяем, что все элементы списка являются продуктами
+        if products:
+            for product in products:
+                if product is None:
+                    raise TypeError("Нельзя добавлять None в список продуктов")
+                if not isinstance(product, Product):
+                    raise TypeError("Можно добавлять только объекты класса Product и его наследников")
         self.__products = products[:] if products else []
 
         # Увеличиваем счетчик категорий
@@ -83,14 +92,29 @@ class Category:
         # Увеличиваем счетчик продуктов на длину списка продуктов
         Category.product_count += len(self.__products)
 
+    # ============================================================================
+    # Начало разработки нового функционала в рамках работы над проектом homework_16_1
+    # ============================================================================
+
     def add_product(self, product: "Product") -> None:
         """Добавляет продукт в категорию.
 
-        Метод добавляет объект класса Product в приватный список товаров категории
-        и увеличивает счетчик общего количества продуктов.
+        Метод добавляет объект класса Product или его наследников в приватный список
+        товаров категории и увеличивает счетчик общего количества продуктов.
+
+        Метод защищен от добавления объектов, не являющихся продуктами. При попытке
+        добавить не-продукт выбрасывается TypeError.
+
+        Метод также предотвращает добавление дубликатов - продуктов с такими же
+        атрибутами. При попытке добавить дубликат выбрасывается ValueError.
 
         Args:
-            product: Объект класса Product для добавления в категорию
+            product: Объект класса Product или его наследников (Smartphone, LawnGrass и т.д.)
+                для добавления в категорию
+
+        Raises:
+            TypeError: Если product не является экземпляром класса Product или его наследников
+            ValueError: Если продукт с такими же атрибутами уже существует в категории
 
         Example:
             >>> product = Product("Test", "Description", 100.0, 5)
@@ -99,10 +123,43 @@ class Category:
             >>> category.add_product(product)
             >>> assert len(category._Category__products) == 1
             >>> assert Category.product_count == initial_count + 1
-            >>> assert "Test" in category.products
+
+            >>> from src.product import Smartphone
+            >>> smartphone = Smartphone("Phone", "Desc", 100.0, 5, 95.5, "Model", 256, "Black")
+            >>> category.add_product(smartphone)
+            >>> assert len(category._Category__products) == 2
+
+            >>> category.add_product("Not a product")  # doctest: +SKIP
+            Traceback (most recent call last):
+            ...
+            TypeError: Можно добавлять только объекты класса Product и его наследников
+
+            >>> category.add_product(product)  # doctest: +SKIP
+            Traceback (most recent call last):
+            ...
+            ValueError: Продукт с такими же атрибутами уже существует в категории
         """
+        if not isinstance(product, Product):
+            raise TypeError("Можно добавлять только объекты класса Product и его наследников")
+        # Проверка на дубликаты: продукт с такими же атрибутами уже существует
+        if product in self.__products:
+            raise ValueError("Продукт с такими же атрибутами уже существует в категории")
         self.__products.append(product)
         Category.product_count += 1
+
+    def get_products(self) -> list["Product"]:
+        """Возвращает копию списка продуктов категории.
+
+        Returns:
+            Копия списка продуктов категории для защиты от изменений
+
+        Example:
+            >>> product = Product("Test", "Description", 100.0, 5)
+            >>> category = Category("Test", "Description", [product])
+            >>> products = category.get_products()
+            >>> assert len(products) == 1
+        """
+        return self.__products[:]
 
     @property
     def products(self) -> str:

@@ -4,8 +4,10 @@
 включая инициализацию, атрибуты и атрибуты класса.
 """
 
+import pytest
+
 from src.category import DEFAULT_PRODUCTS_LIST, Category
-from src.product import Product
+from src.product import LawnGrass, Product, Smartphone
 
 
 class TestCategoryInit:
@@ -217,12 +219,14 @@ class TestCategoryEdgeCases:
         assert Category.product_count == initial_count, "Счетчик не должен изменяться при изменении через property"
 
     def test_category_with_none_values_in_products(self) -> None:
-        """Тест создания категории с None в списке продуктов (если возможно)."""
-        # Это может вызвать ошибку типизации, но проверим поведение
-        product = Product("Product", "Description", 100.0, 5)
-        category = Category("Test", "Description", [product])
-        assert len(category._Category__products) == 1  # type: ignore[attr-defined]
-        assert "Product" in category.products
+        """Тест создания категории с None в списке продуктов (не допускается)."""
+        with pytest.raises(TypeError, match="Нельзя добавлять None в список продуктов"):
+            Category("Test", "Description", [None])  # type: ignore
+
+    def test_category_with_invalid_products_in_init(self) -> None:
+        """Тест создания категории с невалидными объектами в списке продуктов."""
+        with pytest.raises(TypeError, match="Можно добавлять только объекты класса Product и его наследников"):
+            Category("Test", "Description", ["not a product", 123])  # type: ignore
 
 
 class TestCategoryAddProduct:
@@ -271,6 +275,145 @@ class TestCategoryAddProduct:
         products_str = category.products
         for i in range(1, 4):
             assert f"Product {i}" in products_str
+
+    # ============================================================================
+    # Начало разработки нового функционала в рамках работы над проектом homework_16_1
+    # ============================================================================
+
+    def test_add_product_accepts_product(self) -> None:
+        """Тест, что можно добавить Product в категорию."""
+        category = Category("Test", "Description", [])
+        product = Product("Test Product", "Description", 100.0, 5)
+        initial_count = Category.product_count
+
+        category.add_product(product)
+
+        assert len(category._Category__products) == 1  # type: ignore[attr-defined]
+        assert Category.product_count == initial_count + 1
+
+    def test_add_product_accepts_smartphone(self) -> None:
+        """Тест, что можно добавить Smartphone в категорию."""
+        category = Category("Test", "Description", [])
+        smartphone = Smartphone(
+            "Samsung Galaxy S23 Ultra",
+            "256GB, Серый цвет, 200MP камера",
+            180000.0,
+            5,
+            95.5,
+            "S23 Ultra",
+            256,
+            "Серый",
+        )
+        initial_count = Category.product_count
+
+        category.add_product(smartphone)
+
+        assert len(category._Category__products) == 1  # type: ignore[attr-defined]
+        assert Category.product_count == initial_count + 1
+        assert isinstance(category._Category__products[0], Smartphone)  # type: ignore[attr-defined]
+
+    def test_add_product_accepts_lawn_grass(self) -> None:
+        """Тест, что можно добавить LawnGrass в категорию."""
+        category = Category("Test", "Description", [])
+        grass = LawnGrass("Газонная трава", "Элитная трава для газона", 500.0, 20, "Россия", "7 дней", "Зеленый")
+        initial_count = Category.product_count
+
+        category.add_product(grass)
+
+        assert len(category._Category__products) == 1  # type: ignore[attr-defined]
+        assert Category.product_count == initial_count + 1
+        assert isinstance(category._Category__products[0], LawnGrass)  # type: ignore[attr-defined]
+
+    def test_add_product_rejects_string(self) -> None:
+        """Тест, что нельзя добавить строку в категорию."""
+        category = Category("Test", "Description", [])
+        with pytest.raises(TypeError, match="Можно добавлять только объекты класса Product и его наследников"):
+            category.add_product("Not a product")  # type: ignore
+
+    def test_add_product_rejects_int(self) -> None:
+        """Тест, что нельзя добавить число в категорию."""
+        category = Category("Test", "Description", [])
+        with pytest.raises(TypeError, match="Можно добавлять только объекты класса Product и его наследников"):
+            category.add_product(123)  # type: ignore
+
+    def test_add_product_rejects_list(self) -> None:
+        """Тест, что нельзя добавить список в категорию."""
+        category = Category("Test", "Description", [])
+        with pytest.raises(TypeError, match="Можно добавлять только объекты класса Product и его наследников"):
+            category.add_product([1, 2, 3])  # type: ignore
+
+    def test_add_product_rejects_dict(self) -> None:
+        """Тест, что нельзя добавить словарь в категорию."""
+        category = Category("Test", "Description", [])
+        with pytest.raises(TypeError, match="Можно добавлять только объекты класса Product и его наследников"):
+            category.add_product({"name": "Product"})  # type: ignore
+
+    def test_add_product_rejects_none(self) -> None:
+        """Тест, что нельзя добавить None в категорию."""
+        category = Category("Test", "Description", [])
+        with pytest.raises(TypeError, match="Можно добавлять только объекты класса Product и его наследников"):
+            category.add_product(None)  # type: ignore
+
+    def test_add_product_rejects_duplicate_same_object(self) -> None:
+        """Тест, что нельзя добавить тот же объект дважды."""
+        category = Category("Test", "Description", [])
+        product = Product("Test Product", "Description", 100.0, 5)
+        category.add_product(product)
+
+        with pytest.raises(ValueError, match="Продукт с такими же атрибутами уже существует в категории"):
+            category.add_product(product)
+
+    def test_add_product_rejects_duplicate_same_attributes(self) -> None:
+        """Тест, что нельзя добавить продукт с такими же атрибутами."""
+        category = Category("Test", "Description", [])
+        product1 = Product("Test Product", "Description", 100.0, 5)
+        product2 = Product("Test Product", "Description", 100.0, 5)  # Те же атрибуты
+        category.add_product(product1)
+
+        with pytest.raises(ValueError, match="Продукт с такими же атрибутами уже существует в категории"):
+            category.add_product(product2)
+
+    def test_add_product_rejects_duplicate_smartphone(self) -> None:
+        """Тест, что нельзя добавить смартфон с такими же атрибутами."""
+        category = Category("Test", "Description", [])
+        smartphone1 = Smartphone("Phone", "Desc", 100.0, 5, 95.5, "Model", 256, "Black")
+        smartphone2 = Smartphone("Phone", "Desc", 100.0, 5, 95.5, "Model", 256, "Black")  # Те же атрибуты
+        category.add_product(smartphone1)
+
+        with pytest.raises(ValueError, match="Продукт с такими же атрибутами уже существует в категории"):
+            category.add_product(smartphone2)
+
+    def test_add_product_rejects_duplicate_lawn_grass(self) -> None:
+        """Тест, что нельзя добавить газонную траву с такими же атрибутами."""
+        category = Category("Test", "Description", [])
+        grass1 = LawnGrass("Grass", "Desc", 50.0, 10, "Russia", "7 days", "Green")
+        grass2 = LawnGrass("Grass", "Desc", 50.0, 10, "Russia", "7 days", "Green")  # Те же атрибуты
+        category.add_product(grass1)
+
+        with pytest.raises(ValueError, match="Продукт с такими же атрибутами уже существует в категории"):
+            category.add_product(grass2)
+
+    def test_add_product_allows_different_products(self) -> None:
+        """Тест, что можно добавить разные продукты."""
+        category = Category("Test", "Description", [])
+        product1 = Product("Product 1", "Description 1", 100.0, 5)
+        product2 = Product("Product 2", "Description 2", 200.0, 10)
+        category.add_product(product1)
+        category.add_product(product2)
+
+        assert len(category._Category__products) == 2  # type: ignore[attr-defined]
+
+    def test_add_product_allows_similar_but_different_products(self) -> None:
+        """Тест, что можно добавить продукты с похожими, но разными атрибутами."""
+        category = Category("Test", "Description", [])
+        product1 = Product("Product", "Description", 100.0, 5)
+        product2 = Product("Product", "Description", 200.0, 5)  # Разная цена
+        product3 = Product("Product", "Description", 100.0, 10)  # Разное количество
+        category.add_product(product1)
+        category.add_product(product2)
+        category.add_product(product3)
+
+        assert len(category._Category__products) == 3  # type: ignore[attr-defined]
 
 
 class TestCategoryStr:
