@@ -7,7 +7,7 @@
 import json
 import logging
 from pathlib import Path
-from typing import List
+from typing import Any, Dict, List
 
 from src.category import Category
 from src.product import Product
@@ -23,13 +23,13 @@ DEFAULT_RETURN_VALUE: List[Category] = []
 def _sanitize_path(file_path: str) -> str:
     """
     Очищает путь к файлу от конфиденциальной информации.
-    
+
     Удаляет полные пути, оставляя только имя файла для защиты
     конфиденциальной информации о структуре файловой системы.
-    
+
     Args:
         file_path: Полный путь к файлу
-        
+
     Returns:
         Только имя файла или относительный путь
     """
@@ -41,20 +41,20 @@ def _sanitize_path(file_path: str) -> str:
     return path.name
 
 
-def _sanitize_data(data: dict) -> dict:
+def _sanitize_data(data: Dict[str, Any]) -> Dict[str, Any]:
     """
     Очищает данные от конфиденциальной информации для логирования.
-    
+
     Оставляет только структуру (ключи) без значений для защиты
     конфиденциальных данных.
-    
+
     Args:
         data: Словарь с данными
-        
+
     Returns:
         Словарь с ключами, но без значений
     """
-    sanitized = {}
+    sanitized: Dict[str, Any] = {}
     for key, value in data.items():
         if isinstance(value, dict):
             sanitized[key] = _sanitize_data(value)
@@ -180,7 +180,9 @@ def load_categories_from_json(file_path: str) -> List[Category]:
                     products.append(product)
                 except (KeyError, TypeError, ValueError) as e:
                     sanitized_product = _sanitize_data(product_data)
-                    logger.warning(f"Ошибка при создании продукта: {type(e).__name__} - {e}, структура данных: {sanitized_product}")
+                    logger.warning(
+                        f"Ошибка при создании продукта: {type(e).__name__} - {e}, структура данных: {sanitized_product}"
+                    )
                     continue
 
             # Создание категории
