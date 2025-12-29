@@ -1,9 +1,10 @@
 """Модуль для работы с категориями.
 
 Этот модуль содержит класс Category для представления категории товаров
-в интернет-магазине.
+в интернет-магазине и абстрактный класс BaseEntity для общих сущностей.
 """
 
+from abc import ABC, abstractmethod
 from typing import TYPE_CHECKING, Iterator
 
 from src.product import Product
@@ -15,7 +16,47 @@ if TYPE_CHECKING:
 DEFAULT_PRODUCTS_LIST: list["Product"] = []
 
 
-class Category:
+class BaseEntity(ABC):
+    """Абстрактный базовый класс для сущностей с названием и описанием.
+
+    Используется для Category и Order. Определяет общий интерфейс
+    для сущностей, имеющих название и описание.
+
+    Attributes:
+        name: Название сущности
+        description: Описание сущности
+
+    Example:
+        >>> # BaseEntity нельзя создать напрямую
+        >>> from abc import ABC
+        >>> issubclass(BaseEntity, ABC)
+        True
+    """
+
+    name: str
+    description: str
+
+    def __init__(self, name: str, description: str) -> None:
+        """Инициализирует сущность с названием и описанием.
+
+        Args:
+            name: Название сущности
+            description: Описание сущности
+        """
+        self.name = name
+        self.description = description
+
+    @abstractmethod
+    def __str__(self) -> str:
+        """Возвращает строковое представление сущности.
+
+        Returns:
+            Строковое представление сущности
+        """
+        pass
+
+
+class Category(BaseEntity):
     """Класс для представления категории товаров в интернет-магазине.
 
     Класс Category содержит информацию о категории: название, описание
@@ -74,8 +115,7 @@ class Category:
             >>> assert Category.category_count > 0
             >>> assert Category.product_count > 0
         """
-        self.name = name
-        self.description = description
+        super().__init__(name, description)
         # Создаем копию списка, чтобы изменения исходного списка не влияли на категорию
         # Проверяем, что все элементы списка являются продуктами
         if products:

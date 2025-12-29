@@ -494,6 +494,219 @@ class TestLoadCategoriesFromJson:
         assert categories == []
         assert "Отсутствуют обязательные ключи в категории" in caplog.text or "name категории" in caplog.text
 
+    def test_load_categories_from_json_category_not_dict(self, tmp_path: Path, caplog: "LogCaptureFixture") -> None:
+        """Тест обработки случая, когда элемент категории не является словарем."""
+        # Arrange
+        json_data = [
+            "not a dict",  # Элемент категории не словарь
+            {
+                "name": "Валидная категория",
+                "description": "Описание",
+                "products": [],
+            },
+        ]
+
+        json_file = tmp_path / "category_not_dict.json"
+        with open(json_file, "w", encoding="utf-8") as f:
+            json.dump(json_data, f, ensure_ascii=False, indent=2)
+
+        # Act
+        with caplog.at_level(logging.WARNING):
+            categories = load_categories_from_json(str(json_file))
+
+        # Assert
+        # Невалидная категория пропускается, валидная создается
+        assert len(categories) == 1
+        assert categories[0].name == "Валидная категория"
+        assert "Элемент категории должен быть словарем" in caplog.text
+
+    def test_load_categories_from_json_category_name_not_string(
+        self, tmp_path: Path, caplog: "LogCaptureFixture"
+    ) -> None:
+        """Тест обработки случая, когда name категории не является строкой."""
+        # Arrange
+        json_data = [
+            {
+                "name": 123,  # name не строка
+                "description": "Описание",
+                "products": [],
+            },
+            {
+                "name": "Валидная категория",
+                "description": "Описание",
+                "products": [],
+            },
+        ]
+
+        json_file = tmp_path / "name_not_string.json"
+        with open(json_file, "w", encoding="utf-8") as f:
+            json.dump(json_data, f, ensure_ascii=False, indent=2)
+
+        # Act
+        with caplog.at_level(logging.WARNING):
+            categories = load_categories_from_json(str(json_file))
+
+        # Assert
+        # Невалидная категория пропускается, валидная создается
+        assert len(categories) == 1
+        assert categories[0].name == "Валидная категория"
+        assert "name категории должен быть строкой" in caplog.text
+
+    def test_load_categories_from_json_category_description_not_string(
+        self, tmp_path: Path, caplog: "LogCaptureFixture"
+    ) -> None:
+        """Тест обработки случая, когда description категории не является строкой."""
+        # Arrange
+        json_data = [
+            {
+                "name": "Категория",
+                "description": 456,  # description не строка
+                "products": [],
+            },
+            {
+                "name": "Валидная категория",
+                "description": "Описание",
+                "products": [],
+            },
+        ]
+
+        json_file = tmp_path / "description_not_string.json"
+        with open(json_file, "w", encoding="utf-8") as f:
+            json.dump(json_data, f, ensure_ascii=False, indent=2)
+
+        # Act
+        with caplog.at_level(logging.WARNING):
+            categories = load_categories_from_json(str(json_file))
+
+        # Assert
+        # Невалидная категория пропускается, валидная создается
+        assert len(categories) == 1
+        assert categories[0].name == "Валидная категория"
+        assert "description категории должен быть строкой" in caplog.text
+
+    def test_load_categories_from_json_product_not_dict(self, tmp_path: Path, caplog: "LogCaptureFixture") -> None:
+        """Тест обработки случая, когда элемент продукта не является словарем."""
+        # Arrange
+        json_data = [
+            {
+                "name": "Категория",
+                "description": "Описание",
+                "products": [
+                    "not a dict",  # Элемент продукта не словарь
+                    {
+                        "name": "Валидный продукт",
+                        "description": "Описание",
+                        "price": 100.0,
+                        "quantity": 1,
+                    },
+                ],
+            },
+        ]
+
+        json_file = tmp_path / "product_not_dict.json"
+        with open(json_file, "w", encoding="utf-8") as f:
+            json.dump(json_data, f, ensure_ascii=False, indent=2)
+
+        # Act
+        with caplog.at_level(logging.WARNING):
+            categories = load_categories_from_json(str(json_file))
+
+        # Assert
+        # Невалидный продукт пропускается, валидный создается
+        assert len(categories) == 1
+        assert len(categories[0].get_products()) == 1
+        assert categories[0].get_products()[0].name == "Валидный продукт"
+        assert "Элемент продукта должен быть словарем" in caplog.text
+
+    def test_load_categories_from_json_nested_dict_sanitization(
+        self, tmp_path: Path, caplog: "LogCaptureFixture"
+    ) -> None:
+        """Тест обработки вложенных словарей в _sanitize_data (рекурсивный вызов)."""
+        # Arrange
+        json_data = [
+            {
+                "name": "Категория",
+                "description": "Описание",
+                "nested_data": {  # Вложенный словарь для тестирования рекурсии
+                    "key1": "value1",
+                    "key2": {"nested_key": "nested_value"},
+                },
+                "products": [],
+            },
+        ]
+
+        json_file = tmp_path / "nested_dict.json"
+        with open(json_file, "w", encoding="utf-8") as f:
+            json.dump(json_data, f, ensure_ascii=False, indent=2)
+
+        # Act
+        with caplog.at_level(logging.WARNING):
+            # Удаляем обязательные ключи, чтобы вызвать _sanitize_data с вложенными словарями
+            json_data_missing_key = [
+                {
+                    "nested_data": {
+                        "key1": "value1",
+                        "key2": {"nested_key": "nested_value"},
+                    },
+                    # Отсутствуют name и description
+                },
+            ]
+            json_file_missing = tmp_path / "nested_dict_missing.json"
+            with open(json_file_missing, "w", encoding="utf-8") as f:
+                json.dump(json_data_missing_key, f, ensure_ascii=False, indent=2)
+
+            categories = load_categories_from_json(str(json_file_missing))
+
+        # Assert
+        # Категория без обязательных ключей пропускается, но _sanitize_data вызывается с вложенными словарями
+        assert categories == []
+        assert "Отсутствуют обязательные ключи в категории" in caplog.text
+
+    def test_load_categories_from_json_keyerror_exception(self, tmp_path: Path, caplog: "LogCaptureFixture") -> None:
+        """Тест обработки KeyError при отсутствии обязательных полей в JSON."""
+        # Arrange
+        json_file = tmp_path / "keyerror.json"
+        with open(json_file, "w", encoding="utf-8") as f:
+            json.dump([{"name": "Test", "description": "Desc", "products": []}], f)
+
+        # Мокаем json.load чтобы вызвать KeyError на уровне парсинга
+        # Это может произойти, если json.load вызовет KeyError при доступе к полям
+        with patch("src.data_loader.json.load", side_effect=KeyError("missing_key")):
+            # Act
+            with caplog.at_level(logging.ERROR):
+                categories = load_categories_from_json(str(json_file))
+
+            # Assert
+            assert categories == []
+            assert "Отсутствует обязательное поле в JSON" in caplog.text
+
+    def test_load_categories_from_json_valueerror_typeerror(self, tmp_path: Path, caplog: "LogCaptureFixture") -> None:
+        """Тест обработки ValueError и TypeError при загрузке данных."""
+        # Arrange
+        json_file = tmp_path / "value_type_error.json"
+        with open(json_file, "w", encoding="utf-8") as f:
+            json.dump([{"name": "Test", "description": "Desc", "products": []}], f)
+
+        # Мокаем json.load чтобы вызвать ValueError или TypeError
+        with patch("src.data_loader.json.load", side_effect=ValueError("Invalid value")):
+            # Act
+            with caplog.at_level(logging.ERROR):
+                categories = load_categories_from_json(str(json_file))
+
+            # Assert
+            assert categories == []
+            assert "Ошибка типа данных или значения" in caplog.text
+
+        # Тест для TypeError
+        with patch("src.data_loader.json.load", side_effect=TypeError("Invalid type")):
+            # Act
+            with caplog.at_level(logging.ERROR):
+                categories = load_categories_from_json(str(json_file))
+
+            # Assert
+            assert categories == []
+            assert "Ошибка типа данных или значения" in caplog.text
+
 
 class TestDataLoaderConstants:
     """Тесты для констант модуля data_loader."""
