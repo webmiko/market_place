@@ -57,6 +57,28 @@ def _setup_logger() -> logging.Logger:
 logger = _setup_logger()
 
 
+# ============================================================================
+# Начало разработки нового функционала в рамках работы над проектом homework_17_1
+# Дата: 2026-01-02
+# ============================================================================
+
+
+class ZeroQuantityError(ValueError):
+    """Пользовательский класс исключения для обработки добавления товара с нулевым количеством.
+
+    Наследуется от ValueError и используется для явного указания на ошибку
+    при попытке создать товар с нулевым количеством.
+
+    Example:
+        >>> raise ZeroQuantityError("Товар с нулевым количеством не может быть добавлен")
+        Traceback (most recent call last):
+        ...
+        ZeroQuantityError: Товар с нулевым количеством не может быть добавлен
+    """
+
+    pass
+
+
 class LogCreationMixin:
     """Миксин для логирования создания объектов.
 
@@ -135,15 +157,22 @@ class BaseProduct(ABC):
             name: Название продукта
             description: Описание продукта
             price: Цена продукта (может быть с копейками). Должна быть >= 0
-            quantity: Количество в наличии (в штуках). Должно быть >= 0
+            quantity: Количество в наличии (в штуках). Должно быть > 0
 
         Raises:
             ValueError: Если price < 0 или quantity < 0
+            ZeroQuantityError: Если quantity == 0
         """
+        # ============================================================================
+        # Начало разработки нового функционала в рамках работы над проектом homework_17_1
+        # Дата: 2026-01-02
+        # ============================================================================
         if price < 0:
             raise ValueError("Цена не может быть отрицательной")
         if quantity < 0:
             raise ValueError("Количество не может быть отрицательным")
+        if quantity == 0:
+            raise ZeroQuantityError("Товар с нулевым количеством не может быть добавлен")
         self.name = name
         self.description = description
         self.__price = price
@@ -265,10 +294,11 @@ class Product(LogCreationMixin, BaseProduct):
             name: Название продукта
             description: Описание продукта
             price: Цена продукта (может быть с копейками). Должна быть >= 0
-            quantity: Количество в наличии (в штуках). Должно быть >= 0
+            quantity: Количество в наличии (в штуках). Должно быть > 0
 
         Raises:
             ValueError: Если price < 0 или quantity < 0
+            ZeroQuantityError: Если quantity == 0
 
         Example:
             >>> product = Product("Test", "Description", 100.0, 10)
@@ -360,6 +390,8 @@ class Product(LogCreationMixin, BaseProduct):
             raise ValueError(f"price не может быть отрицательным, получено: {price}")
         if quantity < 0:
             raise ValueError(f"quantity не может быть отрицательным, получено: {quantity}")
+        if quantity == 0:
+            raise ZeroQuantityError("Товар с нулевым количеством не может быть добавлен")
 
         if existing_products:
             for existing in existing_products:
@@ -428,7 +460,7 @@ class Product(LogCreationMixin, BaseProduct):
         """
         if type(self) is not type(other):
             raise TypeError("Можно складывать только товары из одинаковых классов продуктов")
-        return self.price * self.quantity + other.price * other.quantity
+        return round(self.price * self.quantity + other.price * other.quantity, 2)
 
     def __eq__(self, other: object) -> bool:
         """Проверяет равенство двух продуктов по всем атрибутам.

@@ -6,7 +6,7 @@
 from typing import TYPE_CHECKING
 
 from src.category import BaseEntity
-from src.product import BaseProduct
+from src.product import BaseProduct, ZeroQuantityError
 
 if TYPE_CHECKING:
     pass
@@ -63,6 +63,7 @@ class Order(BaseEntity):
         Raises:
             ValueError: Если quantity < MIN_QUANTITY
             TypeError: Если product не является объектом класса BaseProduct или его наследников
+            ZeroQuantityError: Если товар имеет нулевое количество (обрабатывается внутри метода)
 
         Example:
             >>> from src.product import Product
@@ -77,15 +78,32 @@ class Order(BaseEntity):
             ...
             ValueError: Количество товара должно быть не менее 1
         """
+        # ============================================================================
+        # Начало разработки нового функционала в рамках работы над проектом homework_17_1
+        # Дата: 2026-01-02
+        # Обработка исключения ZeroQuantityError с использованием try/except/finally/else
+        # ============================================================================
         super().__init__(name, description)
-        if quantity < MIN_QUANTITY:
-            raise ValueError(f"Количество товара должно быть не менее {MIN_QUANTITY}")
-        if not isinstance(product, BaseProduct):
-            raise TypeError("Товар должен быть объектом класса Product или его наследников")
-
-        self.product = product
-        self.quantity = quantity
-        self.total_price = product.price * quantity
+        try:
+            if quantity < MIN_QUANTITY:
+                raise ValueError(f"Количество товара должно быть не менее {MIN_QUANTITY}")
+            if not isinstance(product, BaseProduct):
+                raise TypeError("Товар должен быть объектом класса Product или его наследников")
+            # Проверка на нулевое количество товара
+            if product.quantity == 0:
+                raise ZeroQuantityError("Товар с нулевым количеством не может быть добавлен в заказ")
+        except ZeroQuantityError as e:
+            print(f"Ошибка при создании заказа: {e}")
+            raise
+        else:
+            # Блок выполняется только если исключений не было
+            self.product = product
+            self.quantity = quantity
+            self.total_price = round(product.price * quantity, 2)
+            print(f"Заказ '{name}' успешно создан для товара '{product.name}'")
+        finally:
+            # Блок выполняется всегда, независимо от наличия исключений
+            print(f"Обработка создания заказа '{name}' завершена")
 
     def __str__(self) -> str:
         """Возвращает строковое представление заказа.
