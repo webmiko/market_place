@@ -35,6 +35,7 @@ logs/
 
 # Отчеты и тесты
 reports/
+temp_reports/
 .coverage
 .coverage.*
 .pytest_cache/
