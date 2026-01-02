@@ -7,7 +7,7 @@
 import pytest
 
 from src.category import DEFAULT_PRODUCTS_LIST, Category
-from src.product import LawnGrass, Product, Smartphone
+from src.product import LawnGrass, Product, Smartphone, ZeroQuantityError
 
 
 class TestCategoryInit:
@@ -189,7 +189,7 @@ class TestCategoryEdgeCases:
 
     def test_category_with_large_product_list(self) -> None:
         """Тест создания категории с большим списком продуктов."""
-        products = [Product(f"Product {i}", f"Description {i}", 100.0 * i, i) for i in range(100)]
+        products = [Product(f"Product {i}", f"Description {i}", 100.0 * i, i + 1) for i in range(100)]
         category = Category("Large Category", "Description", products)
         assert len(category._Category__products) == 100  # type: ignore[attr-defined]
         assert Category.product_count >= 100
@@ -445,12 +445,13 @@ class TestCategoryStr:
         assert result == "Test Category, количество продуктов: 20 шт."  # 3 + 7 + 10 = 20
 
     def test_str_with_zero_quantity_products(self) -> None:
-        """Тест строкового представления категории с продуктами с нулевым количеством."""
-        product1 = Product("Product 1", "Description 1", 100.0, 0)
-        product2 = Product("Product 2", "Description 2", 200.0, 0)
-        category = Category("Test Category", "Description", [product1, product2])
-        result = str(category)
-        assert result == "Test Category, количество продуктов: 0 шт."
+        """Тест строкового представления - нельзя создать продукт с нулевым количеством."""
+        # Нельзя создать продукт с quantity=0, поэтому этот тест не актуален
+        # Вместо этого проверим, что создание продукта с quantity=0 вызывает ошибку
+        from src.product import ZeroQuantityError
+
+        with pytest.raises(ZeroQuantityError, match="Товар с нулевым количеством не может быть добавлен"):
+            Product("Product 1", "Description 1", 100.0, 0)
 
     def test_str_with_single_product(self) -> None:
         """Тест строкового представления категории с одним продуктом."""
@@ -514,3 +515,75 @@ class TestCategoryIteration:
         for item in category:
             assert isinstance(item, Product)
             assert item.name == "Product 1"
+
+
+class TestCategoryMiddlePrice:
+    """Тесты для метода middle_price класса Category."""
+
+    def test_middle_price_with_products(self) -> None:
+        """Тест подсчета среднего ценника с товарами."""
+        product1 = Product("Product 1", "Description 1", 100.0, 5)
+        product2 = Product("Product 2", "Description 2", 200.0, 10)
+        product3 = Product("Product 3", "Description 3", 300.0, 15)
+        category = Category("Test Category", "Description", [product1, product2, product3])
+
+        result = category.middle_price()
+        expected = (100.0 + 200.0 + 300.0) / 3
+        assert result == expected
+
+    def test_middle_price_with_single_product(self) -> None:
+        """Тест подсчета среднего ценника с одним товаром."""
+        product = Product("Product 1", "Description 1", 150.0, 5)
+        category = Category("Test Category", "Description", [product])
+
+        result = category.middle_price()
+        assert result == 150.0
+
+    def test_middle_price_with_empty_category(self) -> None:
+        """Тест подсчета среднего ценника с пустой категорией (деление на ноль)."""
+        category = Category("Empty Category", "Description", [])
+
+        result = category.middle_price()
+        assert result == 0.0
+
+    def test_middle_price_with_two_products(self) -> None:
+        """Тест подсчета среднего ценника с двумя товарами."""
+        product1 = Product("Product 1", "Description 1", 100.0, 5)
+        product2 = Product("Product 2", "Description 2", 200.0, 10)
+        category = Category("Test Category", "Description", [product1, product2])
+
+        result = category.middle_price()
+        assert result == 150.0  # (100 + 200) / 2 = 150
+
+    def test_middle_price_with_float_prices(self) -> None:
+        """Тест подсчета среднего ценника с ценами с копейками."""
+        product1 = Product("Product 1", "Description 1", 99.99, 5)
+        product2 = Product("Product 2", "Description 2", 50.50, 10)
+        category = Category("Test Category", "Description", [product1, product2])
+
+        result = category.middle_price()
+        expected = round((99.99 + 50.50) / 2, 2)
+        assert result == expected
+
+    def test_middle_price_returns_float(self) -> None:
+        """Тест, что метод middle_price возвращает float."""
+        product = Product("Product 1", "Description 1", 100.0, 5)
+        category = Category("Test Category", "Description", [product])
+
+        result = category.middle_price()
+        assert isinstance(result, float)
+
+
+class TestCategoryAddProductWithZeroQuantity:
+    """Тесты для обработки ZeroQuantityError в методе add_product."""
+
+    def test_add_product_with_zero_quantity_raises_error(self) -> None:
+        """Тест, что добавление товара с нулевым количеством вызывает ZeroQuantityError."""
+        category = Category("Test", "Description", [])
+        # Создаем продукт с нулевым количеством через прямое изменение атрибута
+        # (так как нельзя создать продукт с quantity=0 через конструктор)
+        product = Product("Test Product", "Description", 100.0, 5)
+        product.quantity = 0  # Изменяем количество на 0 после создания
+
+        with pytest.raises(ZeroQuantityError, match="Товар с нулевым количеством не может быть добавлен"):
+            category.add_product(product)

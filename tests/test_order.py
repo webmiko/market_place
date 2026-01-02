@@ -4,7 +4,7 @@ import pytest
 
 from src.category import BaseEntity
 from src.order import MIN_QUANTITY, Order
-from src.product import BaseProduct, LawnGrass, Product, Smartphone
+from src.product import BaseProduct, LawnGrass, Product, Smartphone, ZeroQuantityError
 
 
 class TestOrderInit:
@@ -216,3 +216,13 @@ class TestOrderEdgeCases:
         order = Order("ORD-001", "", product, 5)
 
         assert order.description == ""
+
+    def test_order_with_zero_quantity_product_raises_error(self) -> None:
+        """Тест, что создание заказа с товаром с нулевым количеством вызывает ZeroQuantityError."""
+        # Создаем продукт с нулевым количеством через прямое изменение атрибута
+        # (так как нельзя создать продукт с quantity=0 через конструктор)
+        product = Product("Test Product", "Description", 100.0, 5)
+        product.quantity = 0  # Изменяем количество на 0 после создания
+
+        with pytest.raises(ZeroQuantityError, match="Товар с нулевым количеством не может быть добавлен в заказ"):
+            Order("ORD-001", "Тестовый заказ", product, 5)

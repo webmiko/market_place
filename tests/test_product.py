@@ -8,7 +8,16 @@ from typing import TYPE_CHECKING
 
 import pytest
 
-from src.product import DEFAULT_PRICE, DEFAULT_QUANTITY, BaseProduct, LawnGrass, LogCreationMixin, Product, Smartphone
+from src.product import (
+    DEFAULT_PRICE,
+    DEFAULT_QUANTITY,
+    BaseProduct,
+    LawnGrass,
+    LogCreationMixin,
+    Product,
+    Smartphone,
+    ZeroQuantityError,
+)
 
 if TYPE_CHECKING:
     from pytest import MonkeyPatch
@@ -52,15 +61,14 @@ class TestProductInit:
         assert isinstance(product.quantity, int)
 
     def test_product_init_with_zero_quantity(self) -> None:
-        """Тест создания продукта с нулевым количеством."""
-        product = Product(
-            name="Out of stock",
-            description="No items available",
-            price=100.0,
-            quantity=0,
-        )
-
-        assert product.quantity == 0
+        """Тест создания продукта с нулевым количеством (не допускается)."""
+        with pytest.raises(ZeroQuantityError, match="Товар с нулевым количеством не может быть добавлен"):
+            Product(
+                name="Out of stock",
+                description="No items available",
+                price=100.0,
+                quantity=0,
+            )
 
     def test_product_init_with_high_price(self) -> None:
         """Тест создания продукта с высокой ценой."""
@@ -143,10 +151,10 @@ class TestProductEdgeCases:
         product = Product("Product", "Description", 0.0, 5)
         assert product.price == 0.0
 
-    def test_product_with_zero_quantity_allowed(self) -> None:
-        """Тест создания продукта с нулевым количеством (допускается)."""
-        product = Product("Product", "Description", 100.0, 0)
-        assert product.quantity == 0
+    def test_product_with_zero_quantity_not_allowed(self) -> None:
+        """Тест создания продукта с нулевым количеством (не допускается)."""
+        with pytest.raises(ZeroQuantityError, match="Товар с нулевым количеством не может быть добавлен"):
+            Product("Product", "Description", 100.0, 0)
 
     def test_product_with_empty_string_name(self) -> None:
         """Тест создания продукта с пустым именем."""
@@ -337,6 +345,18 @@ class TestProductNewProduct:
         with pytest.raises(ValueError, match="quantity не может быть отрицательным"):
             Product.new_product(product_data)
 
+    def test_new_product_with_zero_quantity_in_dict(self) -> None:
+        """Тест создания продукта с нулевым количеством в словаре."""
+        product_data = {
+            "name": "Test",
+            "description": "Description",
+            "price": 100.0,
+            "quantity": 0,
+        }
+
+        with pytest.raises(ZeroQuantityError, match="Товар с нулевым количеством не может быть добавлен"):
+            Product.new_product(product_data)
+
     def test_new_product_with_missing_keys(self) -> None:
         """Тест создания продукта с отсутствующими обязательными ключами."""
         # Отсутствует ключ "name"
@@ -441,10 +461,11 @@ class TestProductStr:
         assert result == "Samsung Galaxy S23 Ultra, 180000 руб. Остаток: 5 шт."
 
     def test_str_with_zero_quantity(self) -> None:
-        """Тест строкового представления продукта с нулевым количеством."""
-        product = Product("Test Product", "Description", 100.0, 0)
-        result = str(product)
-        assert result == "Test Product, 100 руб. Остаток: 0 шт."
+        """Тест строкового представления - нельзя создать продукт с нулевым количеством."""
+        # Нельзя создать продукт с quantity=0, поэтому этот тест не актуален
+        # Вместо этого проверим, что создание продукта с quantity=0 вызывает ошибку
+        with pytest.raises(ZeroQuantityError, match="Товар с нулевым количеством не может быть добавлен"):
+            Product("Test Product", "Description", 100.0, 0)
 
     def test_str_with_float_price(self) -> None:
         """Тест строкового представления продукта с ценой с копейками."""
@@ -473,11 +494,11 @@ class TestProductAdd:
         assert result == 1400.0  # 100 * 10 + 200 * 2 = 1400
 
     def test_add_products_with_zero_quantity(self) -> None:
-        """Тест сложения продуктов с нулевым количеством."""
-        product1 = Product("Product 1", "Description 1", 100.0, 0)
-        product2 = Product("Product 2", "Description 2", 200.0, 5)
-        result = product1 + product2
-        assert result == 1000.0  # 100 * 0 + 200 * 5 = 1000
+        """Тест сложения продуктов - нельзя создать продукт с нулевым количеством."""
+        # Нельзя создать продукт с quantity=0, поэтому этот тест не актуален
+        # Вместо этого проверим, что создание продукта с quantity=0 вызывает ошибку
+        with pytest.raises(ZeroQuantityError, match="Товар с нулевым количеством не может быть добавлен"):
+            Product("Product 1", "Description 1", 100.0, 0)
 
     def test_add_products_commutative(self) -> None:
         """Тест коммутативности сложения продуктов."""
