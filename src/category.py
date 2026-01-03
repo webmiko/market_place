@@ -7,7 +7,7 @@
 from abc import ABC, abstractmethod
 from typing import TYPE_CHECKING, Iterator
 
-from src.product import Product
+from src.product import Product, ZeroQuantityError
 
 if TYPE_CHECKING:
     pass
@@ -155,6 +155,7 @@ class Category(BaseEntity):
         Raises:
             TypeError: Если product не является экземпляром класса Product или его наследников
             ValueError: Если продукт с такими же атрибутами уже существует в категории
+            ZeroQuantityError: Если продукт имеет нулевое количество (обрабатывается внутри метода)
 
         Example:
             >>> product = Product("Test", "Description", 100.0, 5)
@@ -179,13 +180,32 @@ class Category(BaseEntity):
             ...
             ValueError: Продукт с такими же атрибутами уже существует в категории
         """
-        if not isinstance(product, Product):
-            raise TypeError("Можно добавлять только объекты класса Product и его наследников")
-        # Проверка на дубликаты: продукт с такими же атрибутами уже существует
-        if product in self.__products:
-            raise ValueError("Продукт с такими же атрибутами уже существует в категории")
-        self.__products.append(product)
-        Category.product_count += 1
+        # ============================================================================
+        # Начало разработки нового функционала в рамках работы над проектом homework_17_1
+        # Дата: 2026-01-02
+        # Обработка исключения ZeroQuantityError с использованием try/except/finally/else
+        # ============================================================================
+        product_name = getattr(product, "name", "неизвестный товар")
+        try:
+            if not isinstance(product, Product):
+                raise TypeError("Можно добавлять только объекты класса Product и его наследников")
+            # Проверка на дубликаты: продукт с такими же атрибутами уже существует
+            if product in self.__products:
+                raise ValueError("Продукт с такими же атрибутами уже существует в категории")
+            # Проверка на нулевое количество товара
+            if product.quantity == 0:
+                raise ZeroQuantityError("Товар с нулевым количеством не может быть добавлен")
+        except ZeroQuantityError as e:
+            print(f"Ошибка при добавлении товара: {e}")
+            raise
+        else:
+            # Блок выполняется только если исключений не было
+            self.__products.append(product)
+            Category.product_count += 1
+            print(f"Товар '{product.name}' успешно добавлен в категорию '{self.name}'")
+        finally:
+            # Блок выполняется всегда, независимо от наличия исключений
+            print(f"Обработка добавления товара '{product_name}' завершена")
 
     def get_products(self) -> list["Product"]:
         """Возвращает копию списка продуктов категории.
@@ -250,3 +270,35 @@ class Category(BaseEntity):
         """
         for product in self.__products:
             yield product
+
+    # ============================================================================
+    # Начало разработки нового функционала в рамках работы над проектом homework_17_1
+    # Дата: 2026-01-02
+    # ============================================================================
+    def middle_price(self) -> float:
+        """Подсчитывает средний ценник товаров в категории.
+
+        Метод вычисляет среднее арифметическое цен всех товаров в категории.
+        Если в категории нет товаров (деление на ноль), возвращает 0.
+
+        Returns:
+            Средний ценник товаров в категории. Если товаров нет, возвращает 0.
+
+        Example:
+            >>> product1 = Product("Test1", "Desc1", 100.0, 5)
+            >>> product2 = Product("Test2", "Desc2", 200.0, 10)
+            >>> category = Category("Test", "Description", [product1, product2])
+            >>> category.middle_price()
+            150.0
+
+            >>> category_empty = Category("Empty", "Description", [])
+            >>> category_empty.middle_price()
+            0
+        """
+        try:
+            if not self.__products:
+                return 0.0
+            total_price = sum(product.price for product in self.__products)
+            return round(total_price / len(self.__products), 2)
+        except ZeroDivisionError:
+            return 0.0
